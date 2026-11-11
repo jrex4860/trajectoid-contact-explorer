@@ -127,7 +127,7 @@ const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
 const nrm=v=>{const l=Math.hypot(v[0],v[1],v[2]);return [v[0]/l,v[1]/l,v[2]/l];};
 const FREQ=[4,6,8,10,12,16];
 const CTL=[
- ["g-body","r","CM height / core r",50,120,0.1,80.4,v=>v.toFixed(1)+" mm","몸체 중심에 있는 무거운 core의 반지름. 몸체는 늘 이 높이로 구른다.","*"],
+ ["g-body","r","CM height / core r",15,120,0.1,80.4,v=>v.toFixed(1)+" mm","몸체 중심에 있는 무거운 core의 반지름. 몸체는 늘 이 높이로 구른다.","*"],
  ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"바깥 껍질이 core보다 몇 배 큰지. 클수록 도랑이 깊어져 경로를 잘 붙잡는다. 논문 값은 1.3.","*"],
  ["g-path","k0","Mean curvature κ0",-6,6,0.05,2.5,v=>v.toFixed(2)+" /m"+(Math.abs(v)>0.01?` (ρ ${(1000/Math.abs(v)).toFixed(0)} mm)`:""),"경로가 얼마나 휘는지. 0이면 직선, 클수록 작은 원을 돈다. 부호는 왼쪽/오른쪽.","†"],
  ["g-path","k1","Wave amplitude κ1",0,8,0.05,0,v=>v.toFixed(2)+" /m","경로를 좌우로 흔드는 정도. 0보다 크면 S자 경로가 된다.","†"],
@@ -136,7 +136,7 @@ const CTL=[
  ["g-line","aL","Line half-length left aL",0,100,0.5,100,v=>v.toFixed(1)+" mm","바닥에 닿는 선이 왼쪽으로 뻗는 길이. 짧으면 왼쪽 벽이 가까워진다."],
  ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","바닥에 닿는 선이 오른쪽으로 뻗는 길이. 왼쪽과 다르게 하면 한쪽 벽만 가까워진다."],
  ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","닿는 선의 가운데를 비우는 폭. 가운데가 떠서 양 끝 두 곳만 닿는다(two-rail)."],
- ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각이 안쪽으로 들어갈 수 있는 한계. 가운데를 비우려면 core 반지름 r보다 작아야 한다."],
+ ["g-line","rmin","Piece inner limit (core)",10,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각이 안쪽으로 들어갈 수 있는 한계. 가운데를 비우려면 core 반지름 r보다 작아야 한다."],
  ["g-piece","fi","Tiling (Goldberg)",0,5,1,4,v=>{const n=FREQ[v];return `n ${n} → ${10*n*n+2} pieces`;},"조각을 나누는 방식과 개수. 육각형 조각에 오각형 12개가 섞여 있다. 많을수록 조각이 작다."],
  ["g-piece","kw","Piece width",60,100,1,77,v=>v.toFixed(0)+" % of cell","조각 크기를 칸 대비 몇 %로 할지. 크면 조각끼리 부딪히고, 작으면 틈이 생긴다. 약 77%가 부딪히지 않는 한계."],
 ];
@@ -366,7 +366,7 @@ const Mp=v=>[v[0],v[2],-v[1]];
 const geo=new THREE.BufferGeometry(); const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.7,metalness:0,side:THREE.DoubleSide})); grp.add(mesh);
 const curveMat=new THREE.LineBasicMaterial(); let curveObj=null;
 const ground=new THREE.Mesh(new THREE.CircleGeometry(260,64),new THREE.MeshBasicMaterial({transparent:true,opacity:0.18,side:THREE.DoubleSide})); ground.rotation.x=-Math.PI/2; scene.add(ground);
-let az=-0.7,el=0.35,dist=580; function placeCam(){cam.position.set(dist*Math.cos(el)*Math.sin(az),dist*Math.sin(el),dist*Math.cos(el)*Math.cos(az));cam.lookAt(0,-20,0);}
+let az=-0.7,el=0.35,dist=580; function placeCam(){const s=P.r/80.4, d=dist*s; cam.position.set(d*Math.cos(el)*Math.sin(az),d*Math.sin(el),d*Math.cos(el)*Math.cos(az));cam.lookAt(0,-20*s,0); ground.scale.setScalar(s);} // view scales with body size
 let follow=true, si=0, MD=null, baseCol=null, cur={pts:[],owners:new Set()};
 function buildThree(){
   MD=buildMeshData();
@@ -453,7 +453,7 @@ function showStats(){
    ["Contact width real / ideal",`${wReal.toFixed(0)} / ${wIdeal.toFixed(0)} mm`,"실제로 닿는 폭 / 매끈한 몸체일 때 닿는 폭. 비슷할수록 좋다."],
    ["Guidance lost (ideal)",`${(100*lost/n).toFixed(0)}%`,"경로 중 벽이 사라진 부분의 비율. 0%가 좋다."],
   ];
-  $("stats").innerHTML=items.map(([k,v,tp])=>`<div class="stat"><span>${k}${tipBtn(k,tp)}</span><b>${v}</b></div>`).join("");
+  if($("stats")) $("stats").innerHTML=items.map(([k,v,tp])=>`<div class="stat"><span>${k}${tipBtn(k,tp)}</span><b>${v}</b></div>`).join("");
 }
 
 /* ---- loop ---- */
