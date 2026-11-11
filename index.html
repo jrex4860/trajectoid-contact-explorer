@@ -259,7 +259,7 @@ function pose(){
     grp.matrix.set(W[0],W[1],W[2],0,W[3],W[4],W[5],0,W[6],W[7],W[8],0,0,0,0,1);
     const bw=[-Math.sin(p.psi),Math.cos(p.psi),0], pts=[];
     for(const [t0,t1] of strips(p)) pts.push(new THREE.Vector3(...M([t0*bw[0],t0*bw[1],-P.r])),new THREE.Vector3(...M([t1*bw[0],t1*bw[1],-P.r])));
-    curLine.geometry.dispose(); curLine.geometry=new THREE.BufferGeometry().setFromPoints(pts); curLine=curLine;
+    curLine.geometry.dispose(); curLine.geometry=new THREE.BufferGeometry().setFromPoints(pts);
     ground.position.set(0,-P.r-0.3,0); ground.visible=curLine.visible=cmDot.visible=true;
   } else { grp.matrix.identity(); ground.visible=curLine.visible=cmDot.visible=false; }
   grp.matrixWorldNeedsUpdate=true;
