@@ -55,7 +55,7 @@ button[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-c
 .scrub output{font-family:var(--mono);font-size:.8rem;min-width:7ch;text-align:right;font-variant-numeric:tabular-nums}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--line)}
 .stat{background:var(--panel);padding:10px 14px}
-.stat span{display:block;font-size:.72rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.stat span{display:flex;align-items:center;gap:.35em;font-size:.72rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
 .stat b{font-family:var(--mono);font-weight:500;font-size:.92rem;font-variant-numeric:tabular-nums}
 .chip{display:inline-block;font-size:.7rem;padding:0 7px;border-radius:99px;border:1px solid currentColor;margin-left:6px;vertical-align:1px}
 .ok{color:var(--accent)} .warn{color:var(--accent2)} .bad{color:var(--bad)}
@@ -89,10 +89,10 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
 <main class="view">
   <section class="card">
     <header><span><b>Body</b> · drag to orbit, wheel to zoom</span>
-      <span class="btns"><button type="button" id="follow" aria-pressed="true">Roll pose</button>
-      <span class="legend">depth 0 <i></i> max<button type="button" class="q" aria-label="Depth 설명" aria-describedby="tip" data-tip="바깥 껍질 R에서 안쪽으로 깎여 들어간 깊이 = 조각 행정. depth = R − ρ, ρ = min(R, r/cos δ). 0(연한 색)은 깎이지 않은 R 껍질(도랑 벽·캡), 최대(진한 색)는 contact curve 위 CM 아래 접촉점으로 R − r(기본값 24.1 mm). 가운데 비우기를 쓰면 R − rmin까지 커진다. 아래 Max piece stroke가 최댓값이다.">?</button> · <span class="bad">● wall lost</span></span></span></header>
+      <span class="btns"><button type="button" id="follow" aria-pressed="true">Roll pose</button><button type="button" class="q" aria-label="Roll pose 설명" aria-describedby="tip" data-tip="켜짐: 슬라이더 s 위치에서 몸체가 실제로 바닥에 놓인 자세로 회전해 보이고, 바닥 원판과 그 순간 닿은 contact line(주황 굵은 선)이 나온다. 꺼짐: 몸체 좌표에 고정된 모습으로, 몸체에 새겨진 contact curve 전체와 depth 분포를 한눈에 본다. 어느 쪽이든 드래그로 카메라를 돌린다.">?</button>
+      <span class="legend">depth 0 <i></i> max<button type="button" class="q" aria-label="Depth 설명" aria-describedby="tip" data-tip="바깥 껍질 R에서 안쪽으로 깎여 들어간 깊이 = 조각 행정. depth = R − ρ, ρ = min(R, r/cos δ). 0(연한 색)은 깎이지 않은 R 껍질(도랑 벽·캡), 최대(진한 색)는 contact curve 위 CM 아래 접촉점으로 R − r(기본값 24.1 mm). 가운데 비우기를 쓰면 R − rmin까지 커진다. 아래 Max piece stroke가 최댓값이다.">?</button> · <span class="bad">● wall lost</span><button type="button" class="q" aria-label="Wall lost 점 설명" aria-describedby="tip" data-tip="몸체 위 contact curve 중 contact line 한쪽이 30% 미만만 남은(벽이 사라진) 샘플 위치. Plane 패널의 빨간 구간과 같은 곳이다.">?</button></span></span></header>
     <canvas id="three"></canvas>
-    <div class="scrub"><button type="button" id="play">Play</button>
+    <div class="scrub"><button type="button" id="play">Play</button><button type="button" class="q" aria-label="s 슬라이더 설명" aria-describedby="tip" data-tip="s = 경로를 따라 굴러간 거리(mm). 슬라이더로 위치를 고르거나 Play로 자동 진행한다. Roll pose 자세와 Plane 패널의 현재 위치가 함께 움직인다.">?</button>
       <label for="s">s</label><input type="range" id="s" min="0" max="1000" value="0"><output id="o-s"></output></div>
     <div class="stats" id="stats"></div>
   </section>
@@ -161,13 +161,14 @@ function readP(){
 
 /* ---- help tooltips ---- */
 const tip=$("tip");
-function showTip(e){ const b=e.currentTarget; tip.textContent=b.dataset.tip; tip.hidden=false;
+function showTip(b){ tip.textContent=b.dataset.tip; tip.hidden=false;
   const r=b.getBoundingClientRect(), w=tip.offsetWidth, h=tip.offsetHeight;
   tip.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2))+"px";
   tip.style.top=(r.bottom+6+h<innerHeight ? r.bottom+6 : r.top-6-h)+"px"; }
 const hideTip=()=>{tip.hidden=true;};
-document.querySelectorAll("button.q").forEach(b=>{ b.addEventListener("pointerenter",showTip); b.addEventListener("focus",showTip);
-  b.addEventListener("click",showTip); b.addEventListener("pointerleave",hideTip); b.addEventListener("blur",hideTip); });
+const qOf=e=>e.target.closest&&e.target.closest("button.q");
+for(const ev of ["pointerover","focusin","click"]) document.addEventListener(ev,e=>{const b=qOf(e); if(b) showTip(b);});
+for(const ev of ["pointerout","focusout"]) document.addEventListener(ev,e=>{if(qOf(e)) hideTip();});
 addEventListener("keydown",e=>{if(e.key==="Escape")hideTip();});
 addEventListener("scroll",hideTip,{passive:true});
 
@@ -313,10 +314,11 @@ function showStats(dmax){
     ["Contact line",`${(P.aRe+P.aLe-(P.g>0?2*Math.min(P.g,P.aLe,P.aRe):0)).toFixed(0)} mm ${P.g>0?(hollowBad?'<span class="chip bad">needs core &lt; r</span>':'<span class="chip ok">two-rail</span>'):""}`],
     ["CM support",sup?'<span class="chip ok">inside line</span>':'<span class="chip warn">at line end</span>'],
     ["Max piece stroke",`${dmax.toFixed(1)} mm`],
-    ["Guidance lost (wall < 30%)",`${(100*lost/n).toFixed(0)}% <span class="chip ${lost?"bad":"ok"}">${lost?"wraps":"ok"}</span>${part?` · walls cut ${(100*part/n).toFixed(0)}%`:""}`],
+    ["Guidance lost (wall &lt; 30%)",`${(100*lost/n).toFixed(0)}% <span class="chip ${lost?"bad":"ok"}">${lost?"wraps":"ok"}</span>${part?` · walls cut ${(100*part/n).toFixed(0)}%`:""}`],
     ["Piece size / sag",`${ell.toFixed(1)} mm / ${sag.toFixed(2)} mm`],
   ];
-  $("stats").innerHTML=items.map(([k,v])=>`<div class="stat"><span>${k}</span><b>${v}</b></div>`).join("");
+  const TIPS={"Barrier depth R − r": "옆으로 벗어날 때 CM이 올라가야 하는 최대 높이, 즉 도랑 깊이. 퍼텐셜 장벽은 mg(R − r)이고 클수록 경로를 잘 붙잡는다. Sobolev 논문은 R/r 1.3을 썼다.", "Line edge angle δmax": "contact curve에서 R 껍질과 만나는 각거리 acos(r/R). 이 각도에서 조각 반지름 r/cos δ가 R이 되므로 contact line의 최대 반길이는 a = √(R² − r²). R/r 1.3이면 39.7°로 wall-riding 벽 위도와 같다.", "Contact line": "바닥에 닿는 선분의 총 길이 aL + aR(가운데 비우기 구간 제외). two-rail은 가운데가 비어 양쪽만 닿는다는 뜻이고, needs core &lt; r은 조각 안쪽 한계가 r 이상이라 가운데를 비울 수 없다는 경고다.", "CM support": "CM 바로 아래 점이 contact line 안쪽에 있는지. 한쪽 길이가 3 mm 미만이면 CM이 선 끝에 걸려 옆으로 넘어지기 쉽다(at line end).", "Max piece stroke": "모든 방향 중 가장 깊이 깎인 depth = 구동기에 필요한 최대 행정. 보통 R − r이고, 가운데 비우기를 쓰면 R − rmin까지 커진다.", "Guidance lost (wall &lt; 30%)": "경로 샘플 중 contact line 한쪽이 30% 미만만 남은(벽 상실, 빨강) 비율. walls cut은 30–95% 남은(주황) 비율. 몸체 한 바퀴(2πr)를 넘는 비반복 경로에서 생긴다. 기준값은 표시용이다.", "Piece size / sag": "등면적 조각 N개의 대략적 크기 ℓ = √(4πR²/N)와, 구면 조각면이 contact line(직선) 방향으로 어긋나는 sag ℓ²/(8r). 작을수록 Sobolev 형상에 가깝다."};
+  $("stats").innerHTML=items.map(([k,v])=>`<div class="stat"><span>${k}${TIPS[k]?`<button type="button" class="q" aria-label="설명" aria-describedby="tip" data-tip="${TIPS[k]}">?</button>`:""}</span><b>${v}</b></div>`).join("");
 }
 
 /* ---- loop ---- */
