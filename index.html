@@ -100,17 +100,17 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
 "use strict";
 const $=id=>document.getElementById(id);
 const CTL=[
- ["g-body","r","CM height / core r",50,120,0.1,80.4,v=>v.toFixed(1)+" mm","Radius of the heavy core. The centre of mass rides at this height, every contact point lies on this sphere, and a fully pressed piece sits at r."],
- ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"Outer shell radius R over r. Sets the trench depth R − r and the longest possible contact line √(R² − r²). Sobolev et al. used 1.3."],
- ["g-path","k0","Mean curvature κ0",-6,6,0.05,0,v=>v.toFixed(2)+" /m"+(Math.abs(v)>0.01?` (ρ ${(1000/Math.abs(v)).toFixed(0)} mm)`:""),"Constant part of the path curvature in 1/m. 0 rolls straight, 2.5 /m is a 400 mm radius arc. The sign picks the turning side."],
- ["g-path","k1","Wave amplitude κ1",0,8,0.05,0,v=>v.toFixed(2)+" /m","Amplitude of a sine wave added to κ0 along the path. Non-zero values make S-curves; the contact curve then twists back and forth on the body."],
- ["g-path","lam","Wavelength λ",200,1600,10,800,v=>v.toFixed(0)+" mm","Path length over which the curvature wave repeats."],
- ["g-path","S","Path length",100,2400,10,1000,v=>v.toFixed(0)+" mm","Length of path rolled and shaved into the body. Past one body turn (2πr) a non-repeating path starts cutting the ends of its own contact lines."],
- ["g-line","aL","Line half-length left aL",0,100,0.5,100,v=>v.toFixed(1)+" mm","How far the contact line reaches to the left of the point under the CM. Shorter lines bring the R wall closer (like wall-riding). Capped at √(R² − r²)."],
- ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","Same as aL on the right side. Unequal values give an asymmetric line, so one wall is nearer than the other."],
- ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","Half-width of a gap in the middle of the contact line. Pieces there retract below r, so only the two outer parts touch the ground (two-rail)."],
- ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","How far a piece can retract toward the centre. Must be below r for a hollow centre to clear the ground."],
- ["g-piece","N","Piece count (equal area)",100,3000,10,800,v=>v.toFixed(0),"Number of equal-area pieces covering the shell. Sets the piece size ℓ and the sag error ℓ²/(8r) of a sphere-faced piece along the contact line."],
+ ["g-body","r","CM height / core r",50,120,0.1,80.4,v=>v.toFixed(1)+" mm","무거운 core의 반지름. 무게중심(CM)이 늘 이 높이에서 구르고, 모든 접촉점이 이 구 위에 있다. 끝까지 눌린 조각은 반지름 r에 놓인다."],
+ ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"바깥 껍질 반지름 R을 r로 나눈 값. 도랑 깊이 R − r와 가장 긴 contact line √(R² − r²)을 정한다. Sobolev 논문은 1.3을 썼다."],
+ ["g-path","k0","Mean curvature κ0",-6,6,0.05,0,v=>v.toFixed(2)+" /m"+(Math.abs(v)>0.01?` (ρ ${(1000/Math.abs(v)).toFixed(0)} mm)`:""),"경로 곡률의 일정한 부분(1/m). 0이면 직선, 2.5 /m이면 반지름 400 mm 호. 부호가 도는 방향(좌/우)을 정한다."],
+ ["g-path","k1","Wave amplitude κ1",0,8,0.05,0,v=>v.toFixed(2)+" /m","κ0에 더하는 사인파 곡률의 진폭. 0이 아니면 S자 경로가 되고, 몸체 위 contact curve가 좌우로 휘어진다."],
+ ["g-path","lam","Wavelength λ",200,1600,10,800,v=>v.toFixed(0)+" mm","곡률 사인파가 한 번 반복되는 경로 길이."],
+ ["g-path","S","Path length",100,2400,10,1000,v=>v.toFixed(0)+" mm","굴려서 몸체에 깎아 넣는 경로의 길이. 몸체 한 바퀴(2πr)를 넘으면, 반복되지 않는 경로는 자기 contact line의 끝(도랑 벽)을 깎기 시작한다."],
+ ["g-line","aL","Line half-length left aL",0,100,0.5,100,v=>v.toFixed(1)+" mm","CM 바로 아래 점에서 contact line이 왼쪽으로 뻗는 길이. 짧을수록 R 벽이 가까워진다(wall-riding과 비슷). 최대값은 √(R² − r²)."],
+ ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","aL과 같은 의미의 오른쪽 길이. aL과 다르게 두면 비대칭 contact line이 되어 한쪽 벽이 더 가깝다."],
+ ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","contact line 가운데를 비우는 구간의 반폭. 이 구간의 조각은 r보다 안쪽으로 들어가, 양쪽 바깥 부분만 바닥에 닿는다(two-rail)."],
+ ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각이 중심 쪽으로 들어갈 수 있는 한계. 가운데 비우기(two-rail)가 바닥에서 떨어지려면 r보다 작아야 한다."],
+ ["g-piece","N","Piece count (equal area)",100,3000,10,800,v=>v.toFixed(0),"껍질을 덮는 등면적 조각의 개수. 조각 크기 ℓ와, 구면 조각이 contact line 방향으로 어긋나는 sag ℓ²/(8r)을 정한다."],
 ];
 const PRESETS={
  "Straight":{k0:0,k1:0,S:1000,aL:100,aR:100,g:0,rmin:80.4},
@@ -125,7 +125,7 @@ const PRESETS={
 const P={}, outs={};
 for(const [grp,id,lab,mn,mx,st,v,fmt,help] of CTL){
   const d=document.createElement("div"); d.className="ctl";
-  d.innerHTML=`<span class="lab"><label for="${id}">${lab}</label><button type="button" class="q" aria-label="About ${lab}" aria-describedby="tip" data-tip="${help}">?</button></span><output id="o-${id}"></output><input type="range" id="${id}" min="${mn}" max="${mx}" step="${st}" value="${v}">`;
+  d.innerHTML=`<span class="lab"><label for="${id}">${lab}</label><button type="button" class="q" aria-label="${lab} 설명" aria-describedby="tip" data-tip="${help}">?</button></span><output id="o-${id}"></output><input type="range" id="${id}" min="${mn}" max="${mx}" step="${st}" value="${v}">`;
   $(grp).appendChild(d); outs[id]=[d.querySelector("output"),fmt];
   d.querySelector("input").addEventListener("input",rebuild);
 }
