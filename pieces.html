@@ -108,7 +108,7 @@ button[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-c
       <li><i class="pt" style="--c:var(--accent2)"></i>Real contact points at s<button type="button" class="q" aria-label="Real contact points 설명" aria-describedby="tip" data-tip="현재 s에서 바닥에 닿은 조각 꼭짓점의 실제 위치. 선 모양으로 늘어서면 선 접촉, 몇 점으로 모이면 점 접촉이다.">?</button></li>
     </ul>
     <canvas id="ripple"></canvas>
-    <p class="note">Ripple chart: real CM height minus r along the path (0 = continuous Sobolev shell). Positive bumps mean the body rides on protruding piece edges; the vertical line marks s. Geometry and no-slip kinematics only: no dynamics, slipping or collisions between pieces and ground.</p>
+    <p class="note">Ripple chart: real CM height minus r along the path (0 = continuous Sobolev shell). The dashed line is the mean lift (a constant offset that hardly matters on a slope); the swing around it is the ripple the body has to roll over. The vertical line marks s. Geometry and no-slip kinematics only: no dynamics, slipping or collisions between pieces and ground.</p>
   </section>
 </main>
 </div>
@@ -426,13 +426,16 @@ function drawRipple(){
   const ticks=[lo,0,hi].filter((v,i,a)=>a.indexOf(v)===i);
   for(const v of ticks){rx.beginPath();rx.moveTo(l,Y(v));rx.lineTo(w-r,Y(v));rx.stroke();rx.fillText(v.toFixed(1),4,Y(v)+4);}
   rx.fillText("CM ripple (mm)",l+4,t-3); rx.fillText("s (mm)",w-r-44,h-6); rx.fillText("0",l,h-6); rx.fillText(P.S.toFixed(0),w-r-28,h-14);
+  const mean=SM.reduce((a,p)=>a+p.rip,0)/SM.length;
+  rx.setLineDash([5,4]);rx.strokeStyle=tok("--muted");rx.lineWidth=1.2;rx.beginPath();rx.moveTo(l,Y(mean));rx.lineTo(w-r,Y(mean));rx.stroke();rx.setLineDash([]);
+  rx.fillStyle=tok("--muted");rx.fillText(`mean ${mean.toFixed(2)}`,w-r-90,Y(mean)-4);
   rx.strokeStyle=tok("--accent");rx.lineWidth=1.8;rx.beginPath();SM.forEach((p,i)=>i?rx.lineTo(X(p.s),Y(p.rip)):rx.moveTo(X(p.s),Y(p.rip)));rx.stroke();
   rx.strokeStyle=tok("--accent2");rx.lineWidth=1.5;rx.beginPath();rx.moveTo(X(SM[si].s),t);rx.lineTo(X(SM[si].s),h-b);rx.stroke();
 }
 
 /* ---- stats ---- */
 function showStats(){
-  const T=PC.T, n=SM.length, rips=SM.map(p=>p.rip), rmax=Math.max(...rips), rrms=Math.sqrt(rips.reduce((a,v)=>a+v*v,0)/n);
+  const T=PC.T, n=SM.length, rips=SM.map(p=>p.rip), rmean=rips.reduce((a,v)=>a+v,0)/n, rp2p=Math.max(...rips)-Math.min(...rips);
   const wReal=SM.reduce((a,p)=>a+(p.hi-p.lo),0)/n, wIdeal=SM.reduce((a,p)=>a+p.sL+p.sR,0)/n, lost=SM.filter(p=>p.lost).length;
   const dm=Math.max(...PC.pcs.map(p=>p.d));
   const items=[
@@ -441,7 +444,7 @@ function showStats(){
    ["Interference",PC.nBad?`<span class="chip bad">${PC.nBad} pieces</span> ${(-PC.minClr).toFixed(1)} mm`:`<span class="chip ok">none</span>`,"이웃 조각의 공유 변 중점에서 잰 겹침. 조각이 구 중심 방향으로 들어가면 옆 조각 쪽으로 다가가므로, 폭을 줄이지 않으면 겹친다. 빨간 조각이 해당한다."],
    ["Max open gap",`${Math.max(0,PC.maxClr).toFixed(1)} mm`,"이웃 조각 사이 가장 큰 틈. 조각 폭을 줄이면 펼친 상태(벽)에서 틈이 벌어진다. 틈이 접촉선에 걸리면 덜컹거림이 생긴다."],
    ["Step on contact surface",`${PC.maxStep.toFixed(2)} mm`,"펼침·끝까지 눌림이 아닌 중간 단차 조각끼리, 공유 변에서 반지름 방향 높이 차이의 최댓값. Sobolev 연속 면에서는 0이다."],
-   ["CM ripple max / RMS",`${rmax.toFixed(2)} / ${rrms.toFixed(2)} mm`,"구르는 동안 실제 CM 높이 − r. 연속 Sobolev 껍질이면 0이고, 양수는 튀어나온 조각 모서리를 타고 오른다는 뜻이다. 아래 그래프 참고."],
+   ["CM lift mean / ripple p-p",`${rmean.toFixed(2)} / ${rp2p.toFixed(2)} mm`,"실제 CM 높이 − r을 둘로 나눈 값. 평균 들림(mean): CM이 전체적으로 r보다 높아진 양으로, 경사면 구름에는 거의 영향이 없다. 출렁임(p-p, 최대 − 최소): 구르는 중에 넘어야 하는 턱의 크기로, 동역학에 중요하다. 조각 하나 길이 ℓ 동안 경사로 내려가는 높이 ℓ·sin α보다 크면 느릴 때 걸려 멈출 수 있다(관성 무시한 추정)."],
    ["Contact width real / ideal",`${wReal.toFixed(0)} / ${wIdeal.toFixed(0)} mm`,"경로 평균. 실제로 바닥에서 0.2 mm 안에 있는 조각 꼭짓점의 좌우 폭 / 연속 껍질의 contact line 길이. 실제 폭이 훨씬 작으면 선 접촉이 점 접촉으로 무너졌다는 뜻이다."],
    ["Guidance lost (ideal)",`${(100*lost/n).toFixed(0)}%`,"연속 껍질 기준으로 contact line 한쪽이 30% 미만만 남은 경로 비율(Contact-line explorer와 같은 지표)."],
   ];
