@@ -95,9 +95,9 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
     <canvas id="plane"></canvas>
     <ul class="plegend" aria-label="Plane legend">
       <li><i class="sw" style="--c:var(--accent);--w:3px"></i>Path (point under the CM)</li>
-      <li><i class="sw" style="--c:var(--muted);--w:1.5px"></i>Contact line, full length</li>
-      <li><i class="sw" style="--c:var(--accent2);--w:1.5px"></i>Contact line shortened (wall partly cut)</li>
-      <li><i class="sw" style="--c:var(--bad);--w:2px"></i>Wall lost (&lt; 30% left on one side)</li>
+      <li><i class="sw" style="--c:var(--muted);--w:1.5px"></i>Contact line, full length<button type="button" class="q" aria-label="Contact line 설명" aria-describedby="tip" data-tip="몸체가 그 순간 바닥에 닿는 선분(경로에 수직, CM 아래 점을 지남). 양쪽 모두 95% 이상 남아 있어 선 끝에 R 벽이 그대로 있다. 옆으로 밀리면 벽에 걸려 경로로 돌아온다(도랑 정상).">?</button></li>
+      <li><i class="sw" style="--c:var(--accent2);--w:1.5px"></i>Contact line shortened (wall partly cut)<button type="button" class="q" aria-label="Shortened 설명" aria-describedby="tip" data-tip="경로가 몸체 한 바퀴(2πr)를 넘어 다른 구간의 접촉 평면이 이 선의 끝을 깎았다. 한쪽이라도 30–95%만 남음. 벽이 안쪽으로 당겨지거나 낮아져 복원력이 약하지만 경로는 아직 붙잡는다.">?</button></li>
+      <li><i class="sw" style="--c:var(--bad);--w:2px"></i>Wall lost (&lt; 30% left on one side)<button type="button" class="q" aria-label="Wall lost 설명" aria-describedby="tip" data-tip="한쪽이라도 30% 미만만 남아 그쪽 벽이 거의 없다. 옆으로 조금만 밀려도 깎인 쪽으로 굴러가 다른 구간의 contact curve로 넘어갈 수 있다(경로 상실). 30%·95%는 표시용 기준이며 탈출 시뮬레이션으로 검증한 값이 아니다.">?</button></li>
       <li><i class="sw dot" style="--c:var(--accent2);--w:3px"></i>Current position s</li>
       <li><i class="pt" style="--c:var(--accent)"></i>Start</li>
     </ul>
