@@ -94,12 +94,12 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
     <header><span><b>Plane</b> · path and contact lines on the ground (top view)</span><span id="pinfo"></span></header>
     <canvas id="plane"></canvas>
     <ul class="plegend" aria-label="Plane legend">
-      <li><i class="sw" style="--c:var(--accent);--w:3px"></i>Path (point under the CM)</li>
+      <li><i class="sw" style="--c:var(--accent);--w:3px"></i>Path (point under the CM)<button type="button" class="q" aria-label="Path 설명" aria-describedby="tip" data-tip="trajectoid의 경로. CM 바로 아래 접촉점이 바닥에 그리는 궤적으로, 위에서 보면 CM이 지나는 길과 같다. 곡률은 κ(s) = κ0 + κ1·sin(2πs/λ)로 프로그램한다. 빨간 구간은 그 위치의 벽이 사라진 곳이다.">?</button></li>
       <li><i class="sw" style="--c:var(--muted);--w:1.5px"></i>Contact line, full length<button type="button" class="q" aria-label="Contact line 설명" aria-describedby="tip" data-tip="몸체가 그 순간 바닥에 닿는 선분(경로에 수직, CM 아래 점을 지남). 양쪽 모두 95% 이상 남아 있어 선 끝에 R 벽이 그대로 있다. 옆으로 밀리면 벽에 걸려 경로로 돌아온다(도랑 정상).">?</button></li>
       <li><i class="sw" style="--c:var(--accent2);--w:1.5px"></i>Contact line shortened (wall partly cut)<button type="button" class="q" aria-label="Shortened 설명" aria-describedby="tip" data-tip="경로가 몸체 한 바퀴(2πr)를 넘어 다른 구간의 접촉 평면이 이 선의 끝을 깎았다. 한쪽이라도 30–95%만 남음. 벽이 안쪽으로 당겨지거나 낮아져 복원력이 약하지만 경로는 아직 붙잡는다.">?</button></li>
       <li><i class="sw" style="--c:var(--bad);--w:2px"></i>Wall lost (&lt; 30% left on one side)<button type="button" class="q" aria-label="Wall lost 설명" aria-describedby="tip" data-tip="한쪽이라도 30% 미만만 남아 그쪽 벽이 거의 없다. 옆으로 조금만 밀려도 깎인 쪽으로 굴러가 다른 구간의 contact curve로 넘어갈 수 있다(경로 상실). 30%·95%는 표시용 기준이며 탈출 시뮬레이션으로 검증한 값이 아니다.">?</button></li>
-      <li><i class="sw dot" style="--c:var(--accent2);--w:3px"></i>Current position s</li>
-      <li><i class="pt" style="--c:var(--accent)"></i>Start</li>
+      <li><i class="sw dot" style="--c:var(--accent2);--w:3px"></i>Current position s<button type="button" class="q" aria-label="Current position 설명" aria-describedby="tip" data-tip="아래 슬라이더 s(또는 Play)로 고른 위치의 contact line과 접촉점. Roll pose를 켜면 위 3D 몸체가 이 위치에서 바닥에 놓인 자세로 보인다.">?</button></li>
+      <li><i class="pt" style="--c:var(--accent)"></i>Start<button type="button" class="q" aria-label="Start 설명" aria-describedby="tip" data-tip="경로의 시작점(s = 0). 처음 진행 방향은 +x(오른쪽)이다.">?</button></li>
     </ul>
     <p class="note">Contact segments are drawn every 40 mm, perpendicular to the path through the point under the CM. Each segment shows how much of the contact line survives after the whole path is shaved. The point under the CM always survives, but when the contact curve wraps the body other parts of the path cut the line ends, which removes the trench walls (orange: shortened, red: under 30% left on one side). This is Sobolev's periodicity limit. A hollow centre needs pieces that retract below r (core &lt; r) and gives two-rail contact.</p>
   </section>
