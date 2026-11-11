@@ -93,10 +93,10 @@ button[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-c
 <main class="view">
   <section class="card">
     <header><span><b>Pieces</b> · drag to orbit, wheel to zoom <span class="busy" id="busy"></span></span>
-      <span class="btns"><button type="button" id="follow" aria-pressed="true">Roll pose</button><button type="button" class="q" aria-label="Roll pose 설명" aria-describedby="tip" data-tip="켜짐: 슬라이더 s 위치에서 몸체가 바닥에 놓인 자세로 회전하고, 바닥에 실제로 닿은 조각이 주황색으로 표시된다. 바닥 높이는 조각으로 계산한 실제 CM 높이를 따른다. 꺼짐: 몸체 좌표에 고정된 모습.">?</button>
-      <span class="legend">stroke 0 <i></i> max<button type="button" class="q" aria-label="Stroke 색 설명" aria-describedby="tip" data-tip="조각이 끝까지 나온 위치(바깥면 중심이 R)에서 구 중심 방향으로 들어간 단차 d. 연한 색 0 = 펼침(도랑 벽), 진한 색 = 가장 깊이 눌림(contact curve 위). 빨강 = 이웃 조각과 겹치는(간섭) 조각, 주황 = 지금 s에서 바닥에 닿은 조각.">?</button> · <span class="bad">■ interference</span> · <span class="warn">■ in contact</span></span></span></header>
+      <span class="btns"><button type="button" id="follow" aria-pressed="true">Roll pose</button><button type="button" class="q" aria-label="Roll pose 설명" aria-describedby="tip" data-tip="켜면 몸체가 바닥에 놓인 실제 자세로 보이고, 바닥에 닿은 조각이 주황색이 된다.">?</button>
+      <span class="legend">stroke 0 <i></i> max<button type="button" class="q" aria-label="Stroke 색 설명" aria-describedby="tip" data-tip="조각이 안쪽으로 들어간 깊이(단차). 진할수록 깊다. 빨강은 옆 조각과 부딪힘, 주황은 지금 바닥에 닿은 조각.">?</button> · <span class="bad">■ interference</span> · <span class="warn">■ in contact</span></span></span></header>
     <canvas id="three"></canvas>
-    <div class="scrub"><button type="button" id="play">Play</button><button type="button" class="q" aria-label="s 슬라이더 설명" aria-describedby="tip" data-tip="s = 경로를 따라 굴러간 거리(mm). 슬라이더로 고르거나 Play로 자동 진행한다. 3D 자세, Plane의 현재 접촉, Ripple 그래프의 세로선이 함께 움직인다.">?</button>
+    <div class="scrub"><button type="button" id="play">Play</button><button type="button" class="q" aria-label="s 슬라이더 설명" aria-describedby="tip" data-tip="경로를 따라 굴러간 거리. 움직이거나 Play를 누르면 모든 그림이 함께 움직인다.">?</button>
       <label for="s">s</label><input type="range" id="s" min="0" max="1000" value="0"><output id="o-s"></output></div>
     <div class="stats" id="stats"></div>
   </section>
@@ -104,10 +104,10 @@ button[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-c
     <header><span><b>Plane</b> · ideal contact line vs real piece contact (top view)</span><span id="pinfo"></span></header>
     <canvas id="plane"></canvas>
     <ul class="plegend">
-      <li><i class="sw" style="--c:var(--accent);--w:3px"></i>Path<button type="button" class="q" aria-label="Path 설명" aria-describedby="tip" data-tip="이상적인 구가 미끄럼·pivot 없이 구를 때 CM 아래 접촉점의 궤적. 조각 때문에 생기는 경로 변화는 계산하지 않는다(운동학 기준선). 빨간 구간은 연속 껍질에서도 벽이 사라지는 곳이다.">?</button></li>
-      <li><i class="sw" style="--c:var(--muted);--w:1.5px"></i>Ideal contact line<button type="button" class="q" aria-label="Ideal contact line 설명" aria-describedby="tip" data-tip="연속 껍질(Contact-line explorer)일 때의 contact line. 조각 근사가 완벽하면 실제 접촉이 이 선 전체에 걸쳐야 한다.">?</button></li>
-      <li><i class="sw" style="--c:var(--accent2);--w:5px;--o:.55"></i>Real contact extent<button type="button" class="q" aria-label="Real contact extent 설명" aria-describedby="tip" data-tip="조각 꼭짓점 가운데 바닥 평면에서 허용오차(0.2 mm) 안에 있는 점들의 좌우 범위. 이상적 선보다 짧으면 일부 조각만 닿아 실제 접촉이 점 몇 개로 줄었다는 뜻이다.">?</button></li>
-      <li><i class="pt" style="--c:var(--accent2)"></i>Real contact points at s<button type="button" class="q" aria-label="Real contact points 설명" aria-describedby="tip" data-tip="현재 s에서 바닥에 닿은 조각 꼭짓점의 실제 위치. 선 모양으로 늘어서면 선 접촉, 몇 점으로 모이면 점 접촉이다.">?</button></li>
+      <li><i class="sw" style="--c:var(--accent);--w:3px"></i>Path<button type="button" class="q" aria-label="Path 설명" aria-describedby="tip" data-tip="로봇이 굴러가는 경로.">?</button></li>
+      <li><i class="sw" style="--c:var(--muted);--w:1.5px"></i>Ideal contact line<button type="button" class="q" aria-label="Ideal contact line 설명" aria-describedby="tip" data-tip="조각 없이 매끈한 몸체일 때 바닥에 닿는 선.">?</button></li>
+      <li><i class="sw" style="--c:var(--accent2);--w:5px;--o:.55"></i>Real contact extent<button type="button" class="q" aria-label="Real contact extent 설명" aria-describedby="tip" data-tip="조각으로 만든 몸체가 실제로 바닥에 닿는 범위. 회색 선과 길이가 비슷할수록 좋다.">?</button></li>
+      <li><i class="pt" style="--c:var(--accent2)"></i>Real contact points at s<button type="button" class="q" aria-label="Real contact points 설명" aria-describedby="tip" data-tip="지금 바닥에 닿은 지점들. 줄지어 있으면 선 접촉, 몇 개뿐이면 점 접촉.">?</button></li>
     </ul>
     <div class="rhead"><b>CM ripple</b><button type="button" class="q" aria-label="CM ripple 설명" aria-describedby="tip" data-tip="조각 모서리 때문에 몸체(CM)가 이상적인 높이보다 얼마나 들리는지. 점선은 평균, 선이 오르내리는 폭이 구르면서 넘는 턱이다. 턱이 작을수록 매끄럽게 구른다.">?</button></div>
     <canvas id="ripple"></canvas>
@@ -125,23 +125,23 @@ const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
 const nrm=v=>{const l=Math.hypot(v[0],v[1],v[2]);return [v[0]/l,v[1]/l,v[2]/l];};
 const FREQ=[4,6,8,10,12,16];
 const CTL=[
- ["g-body","r","CM height / core r",50,120,0.1,80.4,v=>v.toFixed(1)+" mm","무거운 core의 반지름. CM이 이 높이에서 구르고, 이상적인 접촉점은 모두 이 구 위에 있다.","*"],
- ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"조각이 끝까지 나왔을 때 바깥면 반지름 R과 r의 비. 도랑 깊이 R − r(= 최대 단차)과 contact line 최대 반길이 √(R² − r²)을 정한다.","*"],
- ["g-path","k0","Mean curvature κ0",-6,6,0.05,2.5,v=>v.toFixed(2)+" /m"+(Math.abs(v)>0.01?` (ρ ${(1000/Math.abs(v)).toFixed(0)} mm)`:""),"경로 곡률의 일정한 부분(1/m). 0이면 직선, 2.5 /m이면 반지름 400 mm 호.","†"],
- ["g-path","k1","Wave amplitude κ1",0,8,0.05,0,v=>v.toFixed(2)+" /m","κ0에 더하는 사인파 곡률의 진폭. 0이 아니면 S자 경로.","†"],
- ["g-path","lam","Wavelength λ",200,1600,10,800,v=>v.toFixed(0)+" mm","곡률 사인파가 한 번 반복되는 경로 길이.","†"],
- ["g-path","S","Path length",100,2000,10,600,v=>v.toFixed(0)+" mm","굴려서 몸체에 깎아 넣는 경로 길이. 조각 페이지는 계산량 때문에 2000 mm까지.","†"],
- ["g-line","aL","Line half-length left aL",0,100,0.5,100,v=>v.toFixed(1)+" mm","CM 아래 점에서 contact line이 왼쪽으로 뻗는 길이. 최대 √(R² − r²)."],
- ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","오른쪽 길이. aL과 다르면 비대칭 contact line."],
- ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","contact line 가운데를 비우는 구간의 반폭(two-rail). 조각이 r보다 안쪽으로 들어가야 한다."],
- ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각 바깥면 중심이 들어갈 수 있는 최소 반지름. 최대 단차 = R − min(r, 이 값)."],
- ["g-piece","fi","Tiling (Goldberg)",0,5,1,4,v=>{const n=FREQ[v];return `n ${n} → ${10*n*n+2} pieces`;},"측지 분할(icosphere, 주파수 n)의 dual 다면체. 조각 10n²+2개, 육각형과 오각형 12개(구를 육각형·오각형으로 덮으려면 Euler 공식상 오각형이 정확히 12개 필요). 362·642·1442는 이전 PhysX 측지 분할 시뮬레이션과 같은 수다. 면적 균등화는 아래 Cell areas에서 고른다."],
- ["g-piece","kw","Piece width",60,100,1,77,v=>v.toFixed(0)+" % of cell","조각 폭을 칸(cell) 크기의 몇 %로 만들지. 100%면 펼쳤을 때 틈이 없지만 눌리면 반지름 방향 이동 때문에 이웃과 겹친다. r/R(≈ 77%)이면 끝까지 눌러도 겹치지 않는 대신 펼쳤을 때 틈이 벌어진다."],
+ ["g-body","r","CM height / core r",50,120,0.1,80.4,v=>v.toFixed(1)+" mm","몸체 중심에 있는 무거운 core의 반지름. 몸체는 늘 이 높이로 구른다.","*"],
+ ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"바깥 껍질이 core보다 몇 배 큰지. 클수록 도랑이 깊어져 경로를 잘 붙잡는다. 논문 값은 1.3.","*"],
+ ["g-path","k0","Mean curvature κ0",-6,6,0.05,2.5,v=>v.toFixed(2)+" /m"+(Math.abs(v)>0.01?` (ρ ${(1000/Math.abs(v)).toFixed(0)} mm)`:""),"경로가 얼마나 휘는지. 0이면 직선, 클수록 작은 원을 돈다. 부호는 왼쪽/오른쪽.","†"],
+ ["g-path","k1","Wave amplitude κ1",0,8,0.05,0,v=>v.toFixed(2)+" /m","경로를 좌우로 흔드는 정도. 0보다 크면 S자 경로가 된다.","†"],
+ ["g-path","lam","Wavelength λ",200,1600,10,800,v=>v.toFixed(0)+" mm","S자 한 번의 길이.","†"],
+ ["g-path","S","Path length",100,2000,10,600,v=>v.toFixed(0)+" mm","몸체에 새겨 넣는 경로 길이(최대 2000 mm).","†"],
+ ["g-line","aL","Line half-length left aL",0,100,0.5,100,v=>v.toFixed(1)+" mm","바닥에 닿는 선이 왼쪽으로 뻗는 길이. 짧으면 왼쪽 벽이 가까워진다."],
+ ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","바닥에 닿는 선이 오른쪽으로 뻗는 길이. 왼쪽과 다르게 하면 한쪽 벽만 가까워진다."],
+ ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","닿는 선의 가운데를 비우는 폭. 가운데가 떠서 양 끝 두 곳만 닿는다(two-rail)."],
+ ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각이 안쪽으로 들어갈 수 있는 한계. 가운데를 비우려면 core 반지름 r보다 작아야 한다."],
+ ["g-piece","fi","Tiling (Goldberg)",0,5,1,4,v=>{const n=FREQ[v];return `n ${n} → ${10*n*n+2} pieces`;},"조각을 나누는 방식과 개수. 육각형 조각에 오각형 12개가 섞여 있다. 많을수록 조각이 작다."],
+ ["g-piece","kw","Piece width",60,100,1,77,v=>v.toFixed(0)+" % of cell","조각 크기를 칸 대비 몇 %로 할지. 크면 조각끼리 부딪히고, 작으면 틈이 생긴다. 약 77%가 부딪히지 않는 한계."],
 ];
 const SEGS=[
- ["tiling","Cell areas",[["eq","Equalized"],["raw","Raw Goldberg"]],"eq","Equalized: 칸 꼭짓점을 반복해서 옮겨 모든 조각 면적을 4πR²/N으로 맞춘 분할(오차 0.1% 이내). 육각형·오각형 구조는 유지되고 꼭짓점 각도는 108–131°로 볼록하다. Raw Goldberg: 원래 측지 분할 dual로, 오각형 12개는 평균의 약 0.5배, 육각형은 0.8–1.2배."],
- ["face","Piece face",[["R","R sphere"],["r","r sphere"],["flat","Flat"]],"R","조각 바깥면의 고정 곡률. 강체 조각은 단차에 따라 면이 평행이동만 한다. R sphere: 펼친 상태(벽)에서 정확. r sphere: 끝까지 눌린 상태(CM 아래)에서 r 구면과 일치. Flat: 평면."],
- ["rule","Stroke rule",[["center","Centre on target"],["noprot","No protrusion"]],"center","각 조각의 단차을 정하는 규칙. Centre on target: 바깥면 중심을 목표 표면(ρ = min(R, r/cos δ))에 맞춤. No protrusion: 면의 중심·꼭짓점·변 중점이 목표 표면 밖으로 나오지 않도록 필요한 만큼 더 누름."],
+ ["tiling","Cell areas",[["eq","Equalized"],["raw","Raw Goldberg"]],"eq","Equalized: 모든 조각 면적을 똑같이 맞춤. Raw: 원래 분할(조각 크기가 조금씩 다름)."],
+ ["face","Piece face",[["R","R sphere"],["r","r sphere"],["flat","Flat"]],"R","조각 바깥면 모양. 조각이 작으면 거의 차이가 없다."],
+ ["rule","Stroke rule",[["center","Centre on target"],["noprot","No protrusion"]],"center","조각을 얼마나 들여보낼지 정하는 방법. Centre: 조각 중심을 목표 면에 맞춤. No protrusion: 조각이 목표 면 밖으로 튀어나오지 않게 맞춤(더 매끄러움)."],
 ];
 const PRESETS={
  "Straight":{k0:0,k1:0,S:1000,aL:100,aR:100,g:0,rmin:80.4},
@@ -442,14 +442,14 @@ function showStats(){
   const wReal=SM.reduce((a,p)=>a+(p.hi-p.lo),0)/n, wIdeal=SM.reduce((a,p)=>a+p.sL+p.sR,0)/n, lost=SM.filter(p=>p.lost).length;
   const dm=Math.max(...PC.pcs.map(p=>p.d));
   const items=[
-   ["Pieces",`${T.cells.length} · ℓ ≈ ${(T.ell*P.R).toFixed(1)} mm · area ${T.aMin.toFixed(2)}–${T.aMax.toFixed(2)}×`,"조각 수 10n²+2, 펼친 상태(반지름 R)에서의 평균 크기 ℓ ≈ √(4πR²/N), 조각 면적의 최소–최대(평균 대비). Equalized면 1.00–1.00."],
-   ["Max stroke",`${dm.toFixed(1)} / ${P.dmax.toFixed(1)} mm`,"가장 깊이 눌린 조각의 단차 / 허용 최대 단차 R − min(r, inner limit). 같으면 목표를 맞추려다 한계에 걸린 조각이 있다."],
-   ["Interference",PC.nBad?`<span class="chip bad">${PC.nBad} pieces</span> ${(-PC.minClr).toFixed(1)} mm`:`<span class="chip ok">none</span>`,"이웃 조각의 공유 변 중점에서 잰 겹침. 조각이 구 중심 방향으로 들어가면 옆 조각 쪽으로 다가가므로, 폭을 줄이지 않으면 겹친다. 빨간 조각이 해당한다."],
-   ["Max open gap",`${Math.max(0,PC.maxClr).toFixed(1)} mm`,"이웃 조각 사이 가장 큰 틈. 조각 폭을 줄이면 펼친 상태(벽)에서 틈이 벌어진다. 틈이 접촉선에 걸리면 덜컹거림이 생긴다."],
-   ["Step on contact surface",`${PC.maxStep.toFixed(2)} mm`,"펼침·끝까지 눌림이 아닌 중간 단차 조각끼리, 공유 변에서 반지름 방향 높이 차이의 최댓값. Sobolev 연속 면에서는 0이다."],
-   ["CM lift mean / ripple p-p",`${rmean.toFixed(2)} / ${rp2p.toFixed(2)} mm`,"실제 CM 높이 − r을 둘로 나눈 값. 평균 들림(mean): CM이 전체적으로 r보다 높아진 양으로, 경사면 구름에는 거의 영향이 없다. 출렁임(p-p, 최대 − 최소): 구르는 중에 넘어야 하는 턱의 크기로, 동역학에 중요하다. 조각 하나 길이 ℓ 동안 경사로 내려가는 높이 ℓ·sin α보다 크면 느릴 때 걸려 멈출 수 있다(관성 무시한 추정)."],
-   ["Contact width real / ideal",`${wReal.toFixed(0)} / ${wIdeal.toFixed(0)} mm`,"경로 평균. 실제로 바닥에서 0.2 mm 안에 있는 조각 꼭짓점의 좌우 폭 / 연속 껍질의 contact line 길이. 실제 폭이 훨씬 작으면 선 접촉이 점 접촉으로 무너졌다는 뜻이다."],
-   ["Guidance lost (ideal)",`${(100*lost/n).toFixed(0)}%`,"연속 껍질 기준으로 contact line 한쪽이 30% 미만만 남은 경로 비율(Contact-line explorer와 같은 지표)."],
+   ["Pieces",`${T.cells.length} · ℓ ≈ ${(T.ell*P.R).toFixed(1)} mm · area ${T.aMin.toFixed(2)}–${T.aMax.toFixed(2)}×`,"조각 개수, 크기, 면적이 고른 정도(1.00–1.00이면 모두 같음)."],
+   ["Max stroke",`${dm.toFixed(1)} / ${P.dmax.toFixed(1)} mm`,"가장 깊이 들어간 조각의 단차 / 들어갈 수 있는 최대값."],
+   ["Interference",PC.nBad?`<span class="chip bad">${PC.nBad} pieces</span> ${(-PC.minClr).toFixed(1)} mm`:`<span class="chip ok">none</span>`,"옆 조각끼리 부딪히는지. none이 정상이고, 부딪히면 Piece width를 줄인다."],
+   ["Max open gap",`${Math.max(0,PC.maxClr).toFixed(1)} mm`,"조각 사이 가장 큰 틈."],
+   ["Step on contact surface",`${PC.maxStep.toFixed(2)} mm`,"옆 조각끼리의 높이 차이. 작을수록 매끄럽다."],
+   ["CM lift mean / ripple p-p",`${rmean.toFixed(2)} / ${rp2p.toFixed(2)} mm`,"몸체가 이상 높이보다 평균 얼마나 떠 있는지 / 구르며 넘는 턱의 크기. 턱이 작을수록 매끄럽게 구른다."],
+   ["Contact width real / ideal",`${wReal.toFixed(0)} / ${wIdeal.toFixed(0)} mm`,"실제로 닿는 폭 / 매끈한 몸체일 때 닿는 폭. 비슷할수록 좋다."],
+   ["Guidance lost (ideal)",`${(100*lost/n).toFixed(0)}%`,"경로 중 벽이 사라진 부분의 비율. 0%가 좋다."],
   ];
   $("stats").innerHTML=items.map(([k,v,tp])=>`<div class="stat"><span>${k}${tipBtn(k,tp)}</span><b>${v}</b></div>`).join("");
 }

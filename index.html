@@ -91,10 +91,10 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
 <main class="view">
   <section class="card">
     <header><span><b>Body</b> · drag to orbit, wheel to zoom</span>
-      <span class="btns"><button type="button" id="follow" aria-pressed="true">Roll pose</button><button type="button" class="q" aria-label="Roll pose 설명" aria-describedby="tip" data-tip="켜짐: 슬라이더 s 위치에서 몸체가 실제로 바닥에 놓인 자세로 회전해 보이고, 바닥 원판과 그 순간 닿은 contact line(주황 굵은 선)이 나온다. 꺼짐: 몸체 좌표에 고정된 모습으로, 몸체에 새겨진 contact curve 전체와 depth 분포를 한눈에 본다. 어느 쪽이든 드래그로 카메라를 돌린다.">?</button>
-      <span class="legend">depth 0 <i></i> max<button type="button" class="q" aria-label="Depth 설명" aria-describedby="tip" data-tip="바깥 껍질 R에서 안쪽으로 깎여 들어간 깊이 = 조각 단차. depth = R − ρ, ρ = min(R, r/cos δ). 0(연한 색)은 깎이지 않은 R 껍질(도랑 벽·캡), 최대(진한 색)는 contact curve 위 CM 아래 접촉점으로 R − r(기본값 24.1 mm). 가운데 비우기를 쓰면 R − rmin까지 커진다. 아래 Max piece stroke가 최댓값이다.">?</button> · <span class="bad">● wall lost</span><button type="button" class="q" aria-label="Wall lost 점 설명" aria-describedby="tip" data-tip="몸체 위 contact curve 중 contact line 한쪽이 30% 미만만 남은(벽이 사라진) 샘플 위치. Plane 패널의 빨간 구간과 같은 곳이다.">?</button></span></span></header>
+      <span class="btns"><button type="button" id="follow" aria-pressed="true">Roll pose</button><button type="button" class="q" aria-label="Roll pose 설명" aria-describedby="tip" data-tip="켜면 몸체가 바닥에 놓인 실제 자세로 보인다. 끄면 몸체를 고정해 새겨진 경로 전체를 볼 수 있다.">?</button>
+      <span class="legend">depth 0 <i></i> max<button type="button" class="q" aria-label="Depth 설명" aria-describedby="tip" data-tip="조각이 바깥에서 안쪽으로 들어간 깊이(단차). 연한 색은 그대로, 진한 색은 가장 깊이 들어간 곳이다.">?</button> · <span class="bad">● wall lost</span><button type="button" class="q" aria-label="Wall lost 점 설명" aria-describedby="tip" data-tip="벽이 사라져 경로를 놓칠 수 있는 위치.">?</button></span></span></header>
     <canvas id="three"></canvas>
-    <div class="scrub"><button type="button" id="play">Play</button><button type="button" class="q" aria-label="s 슬라이더 설명" aria-describedby="tip" data-tip="s = 경로를 따라 굴러간 거리(mm). 슬라이더로 위치를 고르거나 Play로 자동 진행한다. Roll pose 자세와 Plane 패널의 현재 위치가 함께 움직인다.">?</button>
+    <div class="scrub"><button type="button" id="play">Play</button><button type="button" class="q" aria-label="s 슬라이더 설명" aria-describedby="tip" data-tip="경로를 따라 굴러간 거리. 움직이거나 Play를 누르면 모든 그림이 함께 움직인다.">?</button>
       <label for="s">s</label><input type="range" id="s" min="0" max="1000" value="0"><output id="o-s"></output></div>
     <div class="stats" id="stats"></div>
   </section>
@@ -102,12 +102,12 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
     <header><span><b>Plane</b> · path and contact lines on the ground (top view)</span><span id="pinfo"></span></header>
     <canvas id="plane"></canvas>
     <ul class="plegend" aria-label="Plane legend">
-      <li><i class="sw" style="--c:var(--accent);--w:3px"></i>Path (point under the CM)<button type="button" class="q" aria-label="Path 설명" aria-describedby="tip" data-tip="trajectoid의 경로. CM 바로 아래 접촉점이 바닥에 그리는 궤적으로, 위에서 보면 CM이 지나는 길과 같다. 곡률은 κ(s) = κ0 + κ1·sin(2πs/λ)로 프로그램한다. 빨간 구간은 그 위치의 벽이 사라진 곳이다.">?</button></li>
-      <li><i class="sw" style="--c:var(--muted);--w:1.5px"></i>Contact line, full length<button type="button" class="q" aria-label="Contact line 설명" aria-describedby="tip" data-tip="몸체가 그 순간 바닥에 닿는 선분(경로에 수직, CM 아래 점을 지남). 양쪽 모두 95% 이상 남아 있어 선 끝에 R 벽이 그대로 있다. 옆으로 밀리면 벽에 걸려 경로로 돌아온다(도랑 정상).">?</button></li>
-      <li><i class="sw" style="--c:var(--accent2);--w:1.5px"></i>Contact line shortened (wall partly cut)<button type="button" class="q" aria-label="Shortened 설명" aria-describedby="tip" data-tip="경로가 몸체 한 바퀴(2πr)를 넘어 다른 구간의 접촉 평면이 이 선의 끝을 깎았다. 한쪽이라도 30–95%만 남음. 벽이 안쪽으로 당겨지거나 낮아져 복원력이 약하지만 경로는 아직 붙잡는다.">?</button></li>
-      <li><i class="sw" style="--c:var(--bad);--w:2px"></i>Wall lost (&lt; 30% left on one side)<button type="button" class="q" aria-label="Wall lost 설명" aria-describedby="tip" data-tip="한쪽이라도 30% 미만만 남아 그쪽 벽이 거의 없다. 옆으로 조금만 밀려도 깎인 쪽으로 굴러가 다른 구간의 contact curve로 넘어갈 수 있다(경로 상실). 30%·95%는 표시용 기준이며 탈출 시뮬레이션으로 검증한 값이 아니다.">?</button></li>
-      <li><i class="sw dot" style="--c:var(--accent2);--w:3px"></i>Current position s<button type="button" class="q" aria-label="Current position 설명" aria-describedby="tip" data-tip="아래 슬라이더 s(또는 Play)로 고른 위치의 contact line과 접촉점. Roll pose를 켜면 위 3D 몸체가 이 위치에서 바닥에 놓인 자세로 보인다.">?</button></li>
-      <li><i class="pt" style="--c:var(--accent)"></i>Start<button type="button" class="q" aria-label="Start 설명" aria-describedby="tip" data-tip="경로의 시작점(s = 0). 처음 진행 방향은 +x(오른쪽)이다.">?</button></li>
+      <li><i class="sw" style="--c:var(--accent);--w:3px"></i>Path (point under the CM)<button type="button" class="q" aria-label="Path 설명" aria-describedby="tip" data-tip="로봇이 굴러가는 경로. 빨간 부분은 벽이 사라진 곳이다.">?</button></li>
+      <li><i class="sw" style="--c:var(--muted);--w:1.5px"></i>Contact line, full length<button type="button" class="q" aria-label="Contact line 설명" aria-describedby="tip" data-tip="그 순간 바닥에 닿는 선. 양 끝에 벽이 있어 옆으로 밀려도 경로로 돌아온다.">?</button></li>
+      <li><i class="sw" style="--c:var(--accent2);--w:1.5px"></i>Contact line shortened (wall partly cut)<button type="button" class="q" aria-label="Shortened 설명" aria-describedby="tip" data-tip="다른 구간 때문에 선 끝이 조금 깎였다. 벽이 약해졌지만 아직 경로를 붙잡는다.">?</button></li>
+      <li><i class="sw" style="--c:var(--bad);--w:2px"></i>Wall lost (&lt; 30% left on one side)<button type="button" class="q" aria-label="Wall lost 설명" aria-describedby="tip" data-tip="한쪽 벽이 거의 없다. 옆으로 밀리면 경로를 벗어날 수 있다.">?</button></li>
+      <li><i class="sw dot" style="--c:var(--accent2);--w:3px"></i>Current position s<button type="button" class="q" aria-label="Current position 설명" aria-describedby="tip" data-tip="슬라이더 s로 고른 지금 위치.">?</button></li>
+      <li><i class="pt" style="--c:var(--accent)"></i>Start<button type="button" class="q" aria-label="Start 설명" aria-describedby="tip" data-tip="경로 시작점. 오른쪽(+x)으로 출발한다.">?</button></li>
     </ul>
     <p class="note">Contact segments are drawn every 40 mm, perpendicular to the path through the point under the CM. Each segment shows how much of the contact line survives after the whole path is shaved. The point under the CM always survives, but when the contact curve wraps the body other parts of the path cut the line ends, which removes the trench walls (orange: shortened, red: under 30% left on one side). This is Sobolev's periodicity limit. A hollow centre needs pieces that retract below r (core &lt; r) and gives two-rail contact.</p>
   </section>
@@ -121,17 +121,17 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
 "use strict";
 const $=id=>document.getElementById(id);
 const CTL=[
- ["g-body","r","CM height / core r",50,120,0.1,80.4,v=>v.toFixed(1)+" mm","무거운 core의 반지름. 무게중심(CM)이 늘 이 높이에서 구르고, 모든 접촉점이 이 구 위에 있다. 끝까지 눌린 조각은 반지름 r에 놓인다."],
- ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"바깥 껍질 반지름 R을 r로 나눈 값. 도랑 깊이 R − r와 가장 긴 contact line √(R² − r²)을 정한다. Sobolev 논문은 1.3을 썼다."],
- ["g-path","k0","Mean curvature κ0",-6,6,0.05,0,v=>v.toFixed(2)+" /m"+(Math.abs(v)>0.01?` (ρ ${(1000/Math.abs(v)).toFixed(0)} mm)`:""),"경로 곡률의 일정한 부분(1/m). 0이면 직선, 2.5 /m이면 반지름 400 mm 호. 부호가 도는 방향(좌/우)을 정한다."],
- ["g-path","k1","Wave amplitude κ1",0,8,0.05,0,v=>v.toFixed(2)+" /m","κ0에 더하는 사인파 곡률의 진폭. 0이 아니면 S자 경로가 되고, 몸체 위 contact curve가 좌우로 휘어진다."],
- ["g-path","lam","Wavelength λ",200,1600,10,800,v=>v.toFixed(0)+" mm","곡률 사인파가 한 번 반복되는 경로 길이."],
- ["g-path","S","Path length",100,2400,10,1000,v=>v.toFixed(0)+" mm","굴려서 몸체에 깎아 넣는 경로의 길이. 몸체 한 바퀴(2πr)를 넘으면, 반복되지 않는 경로는 자기 contact line의 끝(도랑 벽)을 깎기 시작한다."],
- ["g-line","aL","Line half-length left aL",0,100,0.5,100,v=>v.toFixed(1)+" mm","CM 바로 아래 점에서 contact line이 왼쪽으로 뻗는 길이. 짧을수록 R 벽이 가까워진다(wall-riding과 비슷). 최대값은 √(R² − r²)."],
- ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","aL과 같은 의미의 오른쪽 길이. aL과 다르게 두면 비대칭 contact line이 되어 한쪽 벽이 더 가깝다."],
- ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","contact line 가운데를 비우는 구간의 반폭. 이 구간의 조각은 r보다 안쪽으로 들어가, 양쪽 바깥 부분만 바닥에 닿는다(two-rail)."],
- ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각이 중심 쪽으로 들어갈 수 있는 한계. 가운데 비우기(two-rail)가 바닥에서 떨어지려면 r보다 작아야 한다."],
- ["g-piece","N","Piece count (equal area)",100,3000,10,800,v=>v.toFixed(0),"껍질을 덮는 등면적 조각의 개수. 조각 크기 ℓ와, 구면 조각이 contact line 방향으로 어긋나는 sag ℓ²/(8r)을 정한다."],
+ ["g-body","r","CM height / core r",50,120,0.1,80.4,v=>v.toFixed(1)+" mm","몸체 중심에 있는 무거운 core의 반지름. 몸체는 늘 이 높이로 구른다."],
+ ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"바깥 껍질이 core보다 몇 배 큰지. 클수록 도랑이 깊어져 경로를 잘 붙잡는다. 논문 값은 1.3."],
+ ["g-path","k0","Mean curvature κ0",-6,6,0.05,0,v=>v.toFixed(2)+" /m"+(Math.abs(v)>0.01?` (ρ ${(1000/Math.abs(v)).toFixed(0)} mm)`:""),"경로가 얼마나 휘는지. 0이면 직선, 클수록 작은 원을 돈다. 부호는 왼쪽/오른쪽."],
+ ["g-path","k1","Wave amplitude κ1",0,8,0.05,0,v=>v.toFixed(2)+" /m","경로를 좌우로 흔드는 정도. 0보다 크면 S자 경로가 된다."],
+ ["g-path","lam","Wavelength λ",200,1600,10,800,v=>v.toFixed(0)+" mm","S자 한 번의 길이."],
+ ["g-path","S","Path length",100,2400,10,1000,v=>v.toFixed(0)+" mm","몸체에 새겨 넣는 경로 길이. 몸체 한 바퀴(약 505 mm)보다 길면 경로끼리 겹쳐 벽이 깎일 수 있다."],
+ ["g-line","aL","Line half-length left aL",0,100,0.5,100,v=>v.toFixed(1)+" mm","바닥에 닿는 선이 왼쪽으로 뻗는 길이. 짧으면 왼쪽 벽이 가까워진다."],
+ ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","바닥에 닿는 선이 오른쪽으로 뻗는 길이. 왼쪽과 다르게 하면 한쪽 벽만 가까워진다."],
+ ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","닿는 선의 가운데를 비우는 폭. 가운데가 떠서 양 끝 두 곳만 닿는다(two-rail)."],
+ ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각이 안쪽으로 들어갈 수 있는 한계. 가운데를 비우려면 core 반지름 r보다 작아야 한다."],
+ ["g-piece","N","Piece count (equal area)",100,3000,10,800,v=>v.toFixed(0),"조각 개수. 많을수록 조각이 작아져 매끄러운 형상에 가까워진다."],
 ];
 const PRESETS={
  "Straight":{k0:0,k1:0,S:1000,aL:100,aR:100,g:0,rmin:80.4},
@@ -319,7 +319,7 @@ function showStats(dmax){
     ["Guidance lost (wall &lt; 30%)",`${(100*lost/n).toFixed(0)}% <span class="chip ${lost?"bad":"ok"}">${lost?"wraps":"ok"}</span>${part?` · walls cut ${(100*part/n).toFixed(0)}%`:""}`],
     ["Piece size / sag",`${ell.toFixed(1)} mm / ${sag.toFixed(2)} mm`],
   ];
-  const TIPS={"Barrier depth R − r": "옆으로 벗어날 때 CM이 올라가야 하는 최대 높이, 즉 도랑 깊이. 퍼텐셜 장벽은 mg(R − r)이고 클수록 경로를 잘 붙잡는다. Sobolev 논문은 R/r 1.3을 썼다.", "Line edge angle δmax": "contact curve에서 R 껍질과 만나는 각거리 acos(r/R). 이 각도에서 조각 반지름 r/cos δ가 R이 되므로 contact line의 최대 반길이는 a = √(R² − r²). R/r 1.3이면 39.7°로 wall-riding 벽 위도와 같다.", "Contact line": "바닥에 닿는 선분의 총 길이 aL + aR(가운데 비우기 구간 제외). two-rail은 가운데가 비어 양쪽만 닿는다는 뜻이고, needs core &lt; r은 조각 안쪽 한계가 r 이상이라 가운데를 비울 수 없다는 경고다.", "CM support": "CM 바로 아래 점이 contact line 안쪽에 있는지. 한쪽 길이가 3 mm 미만이면 CM이 선 끝에 걸려 옆으로 넘어지기 쉽다(at line end).", "Max piece stroke": "모든 방향 중 가장 깊이 깎인 depth = 구동기에 필요한 최대 단차. 보통 R − r이고, 가운데 비우기를 쓰면 R − rmin까지 커진다.", "Guidance lost (wall &lt; 30%)": "경로 샘플 중 contact line 한쪽이 30% 미만만 남은(벽 상실, 빨강) 비율. walls cut은 30–95% 남은(주황) 비율. 몸체 한 바퀴(2πr)를 넘는 비반복 경로에서 생긴다. 기준값은 표시용이다.", "Piece size / sag": "등면적 조각 N개의 대략적 크기 ℓ = √(4πR²/N)와, 구면 조각면이 contact line(직선) 방향으로 어긋나는 sag ℓ²/(8r). 작을수록 Sobolev 형상에 가깝다."};
+  const TIPS={"Barrier depth R − r": "도랑 깊이. 클수록 옆으로 잘 안 벗어난다.", "Line edge angle δmax": "바닥에 닿는 선이 끝나는 각도. 이보다 바깥은 벽이다.", "Contact line": "바닥에 닿는 선의 전체 길이.", "CM support": "몸체 중심 바로 아래가 닿는 선 안에 있는지. 선 끝이면 옆으로 넘어지기 쉽다.", "Max piece stroke": "조각이 가장 깊이 들어가야 하는 거리. 구동기가 낼 수 있어야 하는 최대 단차.", "Guidance lost (wall &lt; 30%)": "경로 중 벽이 사라진 부분의 비율. 0%가 좋다.", "Piece size / sag": "조각 하나의 크기와, 조각이 곡면에서 어긋나는 정도. 작을수록 좋다."};
   $("stats").innerHTML=items.map(([k,v])=>`<div class="stat"><span>${k}${TIPS[k]?`<button type="button" class="q" aria-label="설명" aria-describedby="tip" data-tip="${TIPS[k]}">?</button>`:""}</span><b>${v}</b></div>`).join("");
 }
 
