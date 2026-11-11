@@ -141,10 +141,13 @@ const SEGS=[
  ["rule","Stroke rule",[["center","Centre on target"],["noprot","No protrusion"]],"center","각 조각의 단차을 정하는 규칙. Centre on target: 바깥면 중심을 목표 표면(ρ = min(R, r/cos δ))에 맞춤. No protrusion: 면의 중심·꼭짓점·변 중점이 목표 표면 밖으로 나오지 않도록 필요한 만큼 더 누름."],
 ];
 const PRESETS={
+ "Straight":{k0:0,k1:0,S:1000,aL:100,aR:100,g:0,rmin:80.4},
  "Arc ρ400":{k0:2.5,k1:0,S:600,aL:100,aR:100,g:0,rmin:80.4},
- "Straight":{k0:0,k1:0,S:600,aL:100,aR:100,g:0,rmin:80.4},
+ "Arc ρ200":{k0:5,k1:0,S:420,aL:100,aR:100,g:0,rmin:80.4},
  "S-curve":{k0:0,k1:4,lam:800,S:800,aL:100,aR:100,g:0,rmin:80.4},
+ "Long S (wraps)":{k0:0,k1:4,lam:800,S:2000,aL:100,aR:100,g:0,rmin:80.4},
  "Short line":{k0:2.5,k1:0,S:600,aL:15,aR:15,g:0,rmin:80.4},
+ "Asymmetric":{k0:2.5,k1:0,S:600,aL:60,aR:8,g:0,rmin:80.4},
  "Two-rail":{k0:2.5,k1:0,S:600,aL:100,aR:100,g:30,rmin:70},
 };
 const P={face:"R",rule:"center",tiling:"eq"}, outs={};
