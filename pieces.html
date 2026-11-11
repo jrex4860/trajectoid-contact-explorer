@@ -92,7 +92,7 @@ button[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-c
   <section class="card">
     <header><span><b>Pieces</b> · drag to orbit, wheel to zoom <span class="busy" id="busy"></span></span>
       <span class="btns"><button type="button" id="follow" aria-pressed="true">Roll pose</button><button type="button" class="q" aria-label="Roll pose 설명" aria-describedby="tip" data-tip="켜짐: 슬라이더 s 위치에서 몸체가 바닥에 놓인 자세로 회전하고, 바닥에 실제로 닿은 조각이 주황색으로 표시된다. 바닥 높이는 조각으로 계산한 실제 CM 높이를 따른다. 꺼짐: 몸체 좌표에 고정된 모습.">?</button>
-      <span class="legend">stroke 0 <i></i> max<button type="button" class="q" aria-label="Stroke 색 설명" aria-describedby="tip" data-tip="조각이 끝까지 나온 위치(바깥면 중심이 R)에서 구 중심 방향으로 들어간 행정 d. 연한 색 0 = 펼침(도랑 벽), 진한 색 = 가장 깊이 눌림(contact curve 위). 빨강 = 이웃 조각과 겹치는(간섭) 조각, 주황 = 지금 s에서 바닥에 닿은 조각.">?</button> · <span class="bad">■ interference</span> · <span class="warn">■ in contact</span></span></span></header>
+      <span class="legend">stroke 0 <i></i> max<button type="button" class="q" aria-label="Stroke 색 설명" aria-describedby="tip" data-tip="조각이 끝까지 나온 위치(바깥면 중심이 R)에서 구 중심 방향으로 들어간 단차 d. 연한 색 0 = 펼침(도랑 벽), 진한 색 = 가장 깊이 눌림(contact curve 위). 빨강 = 이웃 조각과 겹치는(간섭) 조각, 주황 = 지금 s에서 바닥에 닿은 조각.">?</button> · <span class="bad">■ interference</span> · <span class="warn">■ in contact</span></span></span></header>
     <canvas id="three"></canvas>
     <div class="scrub"><button type="button" id="play">Play</button><button type="button" class="q" aria-label="s 슬라이더 설명" aria-describedby="tip" data-tip="s = 경로를 따라 굴러간 거리(mm). 슬라이더로 고르거나 Play로 자동 진행한다. 3D 자세, Plane의 현재 접촉, Ripple 그래프의 세로선이 함께 움직인다.">?</button>
       <label for="s">s</label><input type="range" id="s" min="0" max="1000" value="0"><output id="o-s"></output></div>
@@ -123,7 +123,7 @@ const nrm=v=>{const l=Math.hypot(v[0],v[1],v[2]);return [v[0]/l,v[1]/l,v[2]/l];}
 const FREQ=[4,6,8,10,12,16];
 const CTL=[
  ["g-body","r","CM height / core r",50,120,0.1,80.4,v=>v.toFixed(1)+" mm","무거운 core의 반지름. CM이 이 높이에서 구르고, 이상적인 접촉점은 모두 이 구 위에 있다.","*"],
- ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"조각이 끝까지 나왔을 때 바깥면 반지름 R과 r의 비. 도랑 깊이 R − r(= 최대 행정)과 contact line 최대 반길이 √(R² − r²)을 정한다.","*"],
+ ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"조각이 끝까지 나왔을 때 바깥면 반지름 R과 r의 비. 도랑 깊이 R − r(= 최대 단차)과 contact line 최대 반길이 √(R² − r²)을 정한다.","*"],
  ["g-path","k0","Mean curvature κ0",-6,6,0.05,2.5,v=>v.toFixed(2)+" /m"+(Math.abs(v)>0.01?` (ρ ${(1000/Math.abs(v)).toFixed(0)} mm)`:""),"경로 곡률의 일정한 부분(1/m). 0이면 직선, 2.5 /m이면 반지름 400 mm 호.","†"],
  ["g-path","k1","Wave amplitude κ1",0,8,0.05,0,v=>v.toFixed(2)+" /m","κ0에 더하는 사인파 곡률의 진폭. 0이 아니면 S자 경로.","†"],
  ["g-path","lam","Wavelength λ",200,1600,10,800,v=>v.toFixed(0)+" mm","곡률 사인파가 한 번 반복되는 경로 길이.","†"],
@@ -131,13 +131,13 @@ const CTL=[
  ["g-line","aL","Line half-length left aL",0,100,0.5,100,v=>v.toFixed(1)+" mm","CM 아래 점에서 contact line이 왼쪽으로 뻗는 길이. 최대 √(R² − r²)."],
  ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","오른쪽 길이. aL과 다르면 비대칭 contact line."],
  ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","contact line 가운데를 비우는 구간의 반폭(two-rail). 조각이 r보다 안쪽으로 들어가야 한다."],
- ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각 바깥면 중심이 들어갈 수 있는 최소 반지름. 최대 행정 = R − min(r, 이 값)."],
+ ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각 바깥면 중심이 들어갈 수 있는 최소 반지름. 최대 단차 = R − min(r, 이 값)."],
  ["g-piece","fi","Tiling (Goldberg)",0,5,1,4,v=>{const n=FREQ[v];return `n ${n} → ${10*n*n+2} pieces`;},"측지 분할(icosphere, 주파수 n)의 dual 다면체. 조각 10n²+2개, 육각형과 오각형 12개. 362·642·1442는 이전 PhysX 측지 분할 시뮬레이션과 같은 수다."],
  ["g-piece","kw","Piece width",60,100,1,77,v=>v.toFixed(0)+" % of cell","조각 폭을 칸(cell) 크기의 몇 %로 만들지. 100%면 펼쳤을 때 틈이 없지만 눌리면 반지름 방향 이동 때문에 이웃과 겹친다. r/R(≈ 77%)이면 끝까지 눌러도 겹치지 않는 대신 펼쳤을 때 틈이 벌어진다."],
 ];
 const SEGS=[
- ["face","Piece face",[["R","R sphere"],["r","r sphere"],["flat","Flat"]],"R","조각 바깥면의 고정 곡률. 강체 조각은 행정에 따라 면이 평행이동만 한다. R sphere: 펼친 상태(벽)에서 정확. r sphere: 끝까지 눌린 상태(CM 아래)에서 r 구면과 일치. Flat: 평면."],
- ["rule","Stroke rule",[["center","Centre on target"],["noprot","No protrusion"]],"center","각 조각의 행정을 정하는 규칙. Centre on target: 바깥면 중심을 목표 표면(ρ = min(R, r/cos δ))에 맞춤. No protrusion: 면의 중심·꼭짓점·변 중점이 목표 표면 밖으로 나오지 않도록 필요한 만큼 더 누름."],
+ ["face","Piece face",[["R","R sphere"],["r","r sphere"],["flat","Flat"]],"R","조각 바깥면의 고정 곡률. 강체 조각은 단차에 따라 면이 평행이동만 한다. R sphere: 펼친 상태(벽)에서 정확. r sphere: 끝까지 눌린 상태(CM 아래)에서 r 구면과 일치. Flat: 평면."],
+ ["rule","Stroke rule",[["center","Centre on target"],["noprot","No protrusion"]],"center","각 조각의 단차을 정하는 규칙. Centre on target: 바깥면 중심을 목표 표면(ρ = min(R, r/cos δ))에 맞춤. No protrusion: 면의 중심·꼭짓점·변 중점이 목표 표면 밖으로 나오지 않도록 필요한 만큼 더 누름."],
 ];
 const PRESETS={
  "Arc ρ400":{k0:2.5,k1:0,S:600,aL:100,aR:100,g:0,rmin:80.4},
@@ -415,10 +415,10 @@ function showStats(){
   const dm=Math.max(...PC.pcs.map(p=>p.d));
   const items=[
    ["Pieces",`${T.cells.length} · ℓ ≈ ${(T.ell*P.R).toFixed(1)} mm`,"조각 수 10n²+2와 펼친 상태(반지름 R)에서의 평균 크기 ℓ ≈ √(4πR²/N)."],
-   ["Max stroke",`${dm.toFixed(1)} / ${P.dmax.toFixed(1)} mm`,"가장 깊이 눌린 조각의 행정 / 허용 최대 행정 R − min(r, inner limit). 같으면 목표를 맞추려다 한계에 걸린 조각이 있다."],
+   ["Max stroke",`${dm.toFixed(1)} / ${P.dmax.toFixed(1)} mm`,"가장 깊이 눌린 조각의 단차 / 허용 최대 단차 R − min(r, inner limit). 같으면 목표를 맞추려다 한계에 걸린 조각이 있다."],
    ["Interference",PC.nBad?`<span class="chip bad">${PC.nBad} pieces</span> ${(-PC.minClr).toFixed(1)} mm`:`<span class="chip ok">none</span>`,"이웃 조각의 공유 변 중점에서 잰 겹침. 조각이 구 중심 방향으로 들어가면 옆 조각 쪽으로 다가가므로, 폭을 줄이지 않으면 겹친다. 빨간 조각이 해당한다."],
    ["Max open gap",`${Math.max(0,PC.maxClr).toFixed(1)} mm`,"이웃 조각 사이 가장 큰 틈. 조각 폭을 줄이면 펼친 상태(벽)에서 틈이 벌어진다. 틈이 접촉선에 걸리면 덜컹거림이 생긴다."],
-   ["Step on contact surface",`${PC.maxStep.toFixed(2)} mm`,"펼침·끝까지 눌림이 아닌 중간 행정 조각끼리, 공유 변에서 반지름 방향 높이 차이의 최댓값. Sobolev 연속 면에서는 0이다."],
+   ["Step on contact surface",`${PC.maxStep.toFixed(2)} mm`,"펼침·끝까지 눌림이 아닌 중간 단차 조각끼리, 공유 변에서 반지름 방향 높이 차이의 최댓값. Sobolev 연속 면에서는 0이다."],
    ["CM ripple max / RMS",`${rmax.toFixed(2)} / ${rrms.toFixed(2)} mm`,"구르는 동안 실제 CM 높이 − r. 연속 Sobolev 껍질이면 0이고, 양수는 튀어나온 조각 모서리를 타고 오른다는 뜻이다. 아래 그래프 참고."],
    ["Contact width real / ideal",`${wReal.toFixed(0)} / ${wIdeal.toFixed(0)} mm`,"경로 평균. 실제로 바닥에서 0.2 mm 안에 있는 조각 꼭짓점의 좌우 폭 / 연속 껍질의 contact line 길이. 실제 폭이 훨씬 작으면 선 접촉이 점 접촉으로 무너졌다는 뜻이다."],
    ["Guidance lost (ideal)",`${(100*lost/n).toFixed(0)}%`,"연속 껍질 기준으로 contact line 한쪽이 30% 미만만 남은 경로 비율(Contact-line explorer와 같은 지표)."],
