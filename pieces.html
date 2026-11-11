@@ -35,6 +35,8 @@ h1{font-size:1.35rem;font-weight:600;margin:0;text-wrap:balance}
 .ctl .lab{font-size:.85rem;display:inline-flex;align-items:center;gap:.35em}
 .ctl output{font-family:var(--mono);font-size:.8rem;font-variant-numeric:tabular-nums;color:var(--accent)}
 .ctl input{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.ctl.tight .lab,.ctl.tight output{letter-spacing:-.04em;white-space:nowrap}
+.ctl.tight .lab{gap:.25em}
 .seg{display:flex;flex-direction:column;gap:4px}
 .seg .lab{font-size:.85rem;display:inline-flex;align-items:center;gap:.35em}
 sup.src{color:var(--accent2);font:600 .75em var(--mono);margin-left:.15em}
@@ -156,7 +158,7 @@ const PRESETS={
 const P={face:"R",rule:"center",tiling:"eq"}, outs={};
 const tipBtn=(lab,t)=>`<button type="button" class="q" aria-label="${lab} 설명" aria-describedby="tip" data-tip="${t}">?</button>`;
 for(const [grp,id,lab,mn,mx,st,v,fmt,help,src] of CTL){
-  const d=document.createElement("div"); d.className="ctl";
+  const d=document.createElement("div"); d.className="ctl"+(id==="k0"?" tight":"");
   d.innerHTML=`<span class="lab"><label for="${id}">${lab}${src?`<sup class="src">${src}</sup>`:""}</label>${tipBtn(lab,help)}</span><output id="o-${id}"></output><input type="range" id="${id}" min="${mn}" max="${mx}" step="${st}" value="${v}">`;
   $(grp).appendChild(d); outs[id]=[d.querySelector("output"),fmt];
   d.querySelector("input").addEventListener("input",schedule);
