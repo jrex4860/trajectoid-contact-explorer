@@ -91,10 +91,10 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
 <main class="view">
   <section class="card">
     <header><span><b>Body</b> · drag to orbit, wheel to zoom</span>
-      <span class="btns"><button type="button" id="follow" aria-pressed="true">Roll pose</button><button type="button" class="q" aria-label="Roll pose 설명" aria-describedby="tip" data-tip="켜면 몸체가 바닥에 놓인 실제 자세로 보인다. 끄면 몸체를 고정해 새겨진 경로 전체를 볼 수 있다.">?</button>
-      <span class="legend">depth 0 <i></i> max<button type="button" class="q" aria-label="Depth 설명" aria-describedby="tip" data-tip="조각이 바깥에서 안쪽으로 들어간 깊이(단차). 연한 색은 그대로, 진한 색은 가장 깊이 들어간 곳이다.">?</button> · <span class="bad">● wall lost</span><button type="button" class="q" aria-label="Wall lost 점 설명" aria-describedby="tip" data-tip="벽이 사라져 경로를 놓칠 수 있는 위치.">?</button></span></span></header>
+      <span class="btns"><button type="button" id="follow" aria-pressed="true">Roll pose</button><button type="button" class="q" aria-label="Roll pose 설명" aria-describedby="tip" data-tip="켜면 몸체가 바닥에 놓인 실제 모습으로 보인다. 끄면 몸체를 고정해 새겨진 경로 전체를 볼 수 있다.">?</button>
+      <span class="legend">depth 0 <i></i> max<button type="button" class="q" aria-label="Depth 설명" aria-describedby="tip" data-tip="몸체 표면이 얼마나 깎여 들어갔는지. 연한 색은 그대로, 진한 색은 가장 많이 깎인 곳이다.">?</button> · <span class="bad">● wall lost</span><button type="button" class="q" aria-label="Wall lost 점 설명" aria-describedby="tip" data-tip="홈의 벽이 사라져 로봇이 경로를 놓칠 수 있는 곳.">?</button></span></span></header>
     <canvas id="three"></canvas>
-    <div class="scrub"><button type="button" id="play">Play</button><button type="button" class="q" aria-label="s 슬라이더 설명" aria-describedby="tip" data-tip="경로를 따라 굴러간 거리. 움직이거나 Play를 누르면 모든 그림이 함께 움직인다.">?</button>
+    <div class="scrub"><button type="button" id="play">Play</button><button type="button" class="q" aria-label="s 슬라이더 설명" aria-describedby="tip" data-tip="출발점부터 굴러간 거리. 움직이거나 Play를 누르면 모든 그림이 함께 움직인다.">?</button>
       <label for="s">s</label><input type="range" id="s" min="0" max="1000" value="0"><output id="o-s"></output></div>
     <div class="stats" id="stats"></div>
   </section>
@@ -102,12 +102,12 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
     <header><span><b>Plane</b> · path and contact lines on the ground (top view)</span><span id="pinfo"></span></header>
     <canvas id="plane"></canvas>
     <ul class="plegend" aria-label="Plane legend">
-      <li><i class="sw" style="--c:var(--accent);--w:3px"></i>Path (point under the CM)<button type="button" class="q" aria-label="Path 설명" aria-describedby="tip" data-tip="로봇이 굴러가는 경로. 빨간 부분은 벽이 사라진 곳이다.">?</button></li>
-      <li><i class="sw" style="--c:var(--muted);--w:1.5px"></i>Contact line, full length<button type="button" class="q" aria-label="Contact line 설명" aria-describedby="tip" data-tip="그 순간 바닥에 닿는 선. 양 끝에 벽이 있어 옆으로 밀려도 경로로 돌아온다.">?</button></li>
-      <li><i class="sw" style="--c:var(--accent2);--w:1.5px"></i>Contact line shortened (wall partly cut)<button type="button" class="q" aria-label="Shortened 설명" aria-describedby="tip" data-tip="다른 구간 때문에 선 끝이 조금 깎였다. 벽이 약해졌지만 아직 경로를 붙잡는다.">?</button></li>
-      <li><i class="sw" style="--c:var(--bad);--w:2px"></i>Wall lost (&lt; 30% left on one side)<button type="button" class="q" aria-label="Wall lost 설명" aria-describedby="tip" data-tip="한쪽 벽이 거의 없다. 옆으로 밀리면 경로를 벗어날 수 있다.">?</button></li>
-      <li><i class="sw dot" style="--c:var(--accent2);--w:3px"></i>Current position s<button type="button" class="q" aria-label="Current position 설명" aria-describedby="tip" data-tip="슬라이더 s로 고른 지금 위치.">?</button></li>
-      <li><i class="pt" style="--c:var(--accent)"></i>Start<button type="button" class="q" aria-label="Start 설명" aria-describedby="tip" data-tip="경로 시작점. 오른쪽(+x)으로 출발한다.">?</button></li>
+      <li><i class="sw" style="--c:var(--accent);--w:3px"></i>Path (point under the CM)<button type="button" class="q" aria-label="Path 설명" aria-describedby="tip" data-tip="로봇이 굴러가는 길. 빨간 부분은 벽이 사라진 곳이다.">?</button></li>
+      <li><i class="sw" style="--c:var(--muted);--w:1.5px"></i>Contact line, full length<button type="button" class="q" aria-label="Contact line 설명" aria-describedby="tip" data-tip="그 순간 바닥에 닿는 선. 양 끝에 벽이 있어 옆으로 밀려도 원래 길로 돌아온다.">?</button></li>
+      <li><i class="sw" style="--c:var(--accent2);--w:1.5px"></i>Contact line shortened (wall partly cut)<button type="button" class="q" aria-label="Shortened 설명" aria-describedby="tip" data-tip="선 끝이 조금 깎였다. 벽이 약해졌지만 아직 길을 따라간다.">?</button></li>
+      <li><i class="sw" style="--c:var(--bad);--w:2px"></i>Wall lost (&lt; 30% left on one side)<button type="button" class="q" aria-label="Wall lost 설명" aria-describedby="tip" data-tip="한쪽 벽이 거의 없다. 옆으로 밀리면 길을 벗어날 수 있다.">?</button></li>
+      <li><i class="sw dot" style="--c:var(--accent2);--w:3px"></i>Current position s<button type="button" class="q" aria-label="Current position 설명" aria-describedby="tip" data-tip="슬라이더로 고른 지금 위치.">?</button></li>
+      <li><i class="pt" style="--c:var(--accent)"></i>Start<button type="button" class="q" aria-label="Start 설명" aria-describedby="tip" data-tip="출발점. 오른쪽으로 출발한다.">?</button></li>
     </ul>
     <p class="note">Contact segments are drawn every 40 mm, perpendicular to the path through the point under the CM. Each segment shows how much of the contact line survives after the whole path is shaved. The point under the CM always survives, but when the contact curve wraps the body other parts of the path cut the line ends, which removes the trench walls (orange: shortened, red: under 30% left on one side). This is Sobolev's periodicity limit. A hollow centre needs pieces that retract below r (core &lt; r) and gives two-rail contact.</p>
   </section>
@@ -121,17 +121,17 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
 "use strict";
 const $=id=>document.getElementById(id);
 const CTL=[
- ["g-body","r","CM height / core r",50,120,0.1,80.4,v=>v.toFixed(1)+" mm","몸체 중심에 있는 무거운 core의 반지름. 몸체는 늘 이 높이로 구른다."],
- ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"바깥 껍질이 core보다 몇 배 큰지. 클수록 도랑이 깊어져 경로를 잘 붙잡는다. 논문 값은 1.3."],
- ["g-path","k0","Mean curvature κ0",-6,6,0.05,0,v=>v.toFixed(2)+" /m"+(Math.abs(v)>0.01?` (ρ ${(1000/Math.abs(v)).toFixed(0)} mm)`:""),"경로가 얼마나 휘는지. 0이면 직선, 클수록 작은 원을 돈다. 부호는 왼쪽/오른쪽."],
- ["g-path","k1","Wave amplitude κ1",0,8,0.05,0,v=>v.toFixed(2)+" /m","경로를 좌우로 흔드는 정도. 0보다 크면 S자 경로가 된다."],
- ["g-path","lam","Wavelength λ",200,1600,10,800,v=>v.toFixed(0)+" mm","S자 한 번의 길이."],
- ["g-path","S","Path length",100,2400,10,1000,v=>v.toFixed(0)+" mm","몸체에 새겨 넣는 경로 길이. 몸체 한 바퀴(약 505 mm)보다 길면 경로끼리 겹쳐 벽이 깎일 수 있다."],
- ["g-line","aL","Line half-length left aL",0,100,0.5,100,v=>v.toFixed(1)+" mm","바닥에 닿는 선이 왼쪽으로 뻗는 길이. 짧으면 왼쪽 벽이 가까워진다."],
- ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","바닥에 닿는 선이 오른쪽으로 뻗는 길이. 왼쪽과 다르게 하면 한쪽 벽만 가까워진다."],
- ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","닿는 선의 가운데를 비우는 폭. 가운데가 떠서 양 끝 두 곳만 닿는다(two-rail)."],
- ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각이 안쪽으로 들어갈 수 있는 한계. 가운데를 비우려면 core 반지름 r보다 작아야 한다."],
- ["g-piece","N","Piece count (equal area)",100,3000,10,800,v=>v.toFixed(0),"조각 개수. 많을수록 조각이 작아져 매끄러운 형상에 가까워진다."],
+ ["g-body","r","CM height / core r",50,120,0.1,80.4,v=>v.toFixed(1)+" mm","몸체 가운데 들어 있는 무거운 추의 반지름. 몸체는 언제나 이 높이로 굴러간다."],
+ ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"바깥 껍질이 가운데 추보다 몇 배 큰지. 클수록 홈이 깊어져 경로를 잘 따라간다. 논문 값은 1.3."],
+ ["g-path","k0","Mean curvature κ0",-6,6,0.05,0,v=>v.toFixed(2)+" /m"+(Math.abs(v)>0.01?` (ρ ${(1000/Math.abs(v)).toFixed(0)} mm)`:""),"경로가 얼마나 휘는지. 0이면 직선, 숫자가 클수록 작은 원을 그린다. +/−는 왼쪽/오른쪽."],
+ ["g-path","k1","Wave amplitude κ1",0,8,0.05,0,v=>v.toFixed(2)+" /m","경로를 좌우로 구불구불하게 만드는 정도. 0보다 크면 S자 경로가 된다."],
+ ["g-path","lam","Wavelength λ",200,1600,10,800,v=>v.toFixed(0)+" mm","S자가 한 번 반복되는 길이."],
+ ["g-path","S","Path length",100,2400,10,1000,v=>v.toFixed(0)+" mm","몸체에 새겨 넣는 경로 길이. 몸체 한 바퀴(약 505 mm)보다 길면 경로끼리 겹쳐 홈의 벽이 깎일 수 있다."],
+ ["g-line","aL","Line half-length left aL",0,100,0.5,100,v=>v.toFixed(1)+" mm","바닥에 닿는 선이 왼쪽으로 얼마나 긴지. 짧으면 왼쪽 벽이 가까워진다."],
+ ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","바닥에 닿는 선이 오른쪽으로 얼마나 긴지. 왼쪽과 다르게 하면 한쪽 벽만 가까워진다."],
+ ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","바닥에 닿는 선의 가운데를 띄우는 폭. 가운데가 떠서 양 끝 두 곳만 바닥에 닿는다."],
+ ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각이 안쪽으로 들어갈 수 있는 한계. 가운데를 띄우려면 가운데 추보다 더 안쪽까지 들어가야 한다."],
+ ["g-piece","N","Piece count (equal area)",100,3000,10,800,v=>v.toFixed(0),"몸체를 이루는 조각 개수. 많을수록 조각이 작아져 매끄러운 모양에 가까워진다."],
 ];
 const PRESETS={
  "Straight":{k0:0,k1:0,S:1000,aL:100,aR:100,g:0,rmin:80.4},
@@ -319,7 +319,7 @@ function showStats(dmax){
     ["Guidance lost (wall &lt; 30%)",`${(100*lost/n).toFixed(0)}% <span class="chip ${lost?"bad":"ok"}">${lost?"wraps":"ok"}</span>${part?` · walls cut ${(100*part/n).toFixed(0)}%`:""}`],
     ["Piece size / sag",`${ell.toFixed(1)} mm / ${sag.toFixed(2)} mm`],
   ];
-  const TIPS={"Barrier depth R − r": "도랑 깊이. 클수록 옆으로 잘 안 벗어난다.", "Line edge angle δmax": "바닥에 닿는 선이 끝나는 각도. 이보다 바깥은 벽이다.", "Contact line": "바닥에 닿는 선의 전체 길이.", "CM support": "몸체 중심 바로 아래가 닿는 선 안에 있는지. 선 끝이면 옆으로 넘어지기 쉽다.", "Max piece stroke": "조각이 가장 깊이 들어가야 하는 거리. 구동기가 낼 수 있어야 하는 최대 단차.", "Guidance lost (wall &lt; 30%)": "경로 중 벽이 사라진 부분의 비율. 0%가 좋다.", "Piece size / sag": "조각 하나의 크기와, 조각이 곡면에서 어긋나는 정도. 작을수록 좋다."};
+  const TIPS={"Barrier depth R − r": "홈의 깊이. 깊을수록 옆으로 잘 안 벗어난다.", "Line edge angle δmax": "바닥에 닿는 선이 끝나는 위치(각도). 그 바깥은 벽이다.", "Contact line": "바닥에 닿는 선의 전체 길이.", "CM support": "몸체 중심 바로 아래가 바닥에 닿아 있는지. 아니면 옆으로 넘어지기 쉽다.", "Max piece stroke": "조각이 가장 깊이 들어가야 하는 거리. 모터가 이만큼 움직일 수 있어야 한다.", "Guidance lost (wall &lt; 30%)": "경로 중 벽이 사라진 부분의 비율. 0%가 좋다.", "Piece size / sag": "조각 하나의 크기와, 조각 때문에 표면이 울퉁불퉁해지는 정도. 작을수록 좋다."};
   $("stats").innerHTML=items.map(([k,v])=>`<div class="stat"><span>${k}${TIPS[k]?`<button type="button" class="q" aria-label="설명" aria-describedby="tip" data-tip="${TIPS[k]}">?</button>`:""}</span><b>${v}</b></div>`).join("");
 }
 
