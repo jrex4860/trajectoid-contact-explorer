@@ -10,3 +10,8 @@ Interactive geometry viewer for a Sobolev-style trajectoid with programmable sha
 Geometry and no-slip kinematics only, not a physics simulation. Based on Sobolev et al., *Nature* 620 (2023), doi:10.1038/s41586-023-06306-y.
 
 Open `index.html` in a browser, or visit the GitHub Pages site.
+
+## Pages
+
+- `index.html`: continuous Sobolev-style shell, contact-line explorer.
+- `pieces.html`: the same body built from rigid prismatic pieces on a Goldberg tiling (piece strokes, interference, real contact, CM ripple).

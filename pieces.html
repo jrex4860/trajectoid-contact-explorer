@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Trajectoid Piece Explorer</title>
+<meta name="description" content="Sobolev-style trajectoid built from rigid prismatic pieces on a Goldberg tiling: piece strokes, interference, real contact and CM ripple.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* layout: control rail left; pieces (3D), plane (ideal vs real contact) and ripple chart stacked right */
+:root{
+  --bg:#f3f5f4; --panel:#ffffff; --fg:#17201d; --muted:#5d6b66; --line:#d5dcd9;
+  --accent:#0f7c6c; --accent2:#b5651d; --bad:#c2303a;
+  --seq0:#dcefe9; --seq1:#0f5f53; --core:#8a9692;
+  --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#111715; --panel:#18201e; --fg:#e4ebe8; --muted:#93a29c; --line:#2c3734;
+  --accent:#3fbfa8; --accent2:#e0974f; --bad:#ef6670;
+  --seq0:#22403a; --seq1:#8fe6d4; --core:#5f6c68; color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 var(--sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px}
+h1{font-size:1.35rem;font-weight:600;margin:0;text-wrap:balance}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.top a{color:var(--accent);font-size:.85rem}
+.app{display:grid;grid-template-columns:320px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:820px){.app{grid-template-columns:minmax(0,1fr)}}
+.rail{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:14px}
+.group{display:flex;flex-direction:column;gap:8px}
+.group h2{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:500}
+.ctl{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center}
+.ctl .lab{font-size:.85rem;display:inline-flex;align-items:center;gap:.35em}
+.ctl output{font-family:var(--mono);font-size:.8rem;font-variant-numeric:tabular-nums;color:var(--accent)}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.seg{display:flex;flex-direction:column;gap:4px}
+.seg .lab{font-size:.85rem;display:inline-flex;align-items:center;gap:.35em}
+sup.src{color:var(--accent2);font:600 .75em var(--mono);margin-left:.15em}
+.fn{border-top:1px solid var(--line);padding-top:10px;font-size:.74rem;color:var(--muted);line-height:1.45}
+.fn p{margin:0 0 4px}
+button.q{display:inline-grid;place-items:center;width:1.15em;height:1.15em;padding:0;border-radius:50%;font:600 .78em/1 var(--mono);color:var(--muted);background:transparent;border:1px solid var(--muted);cursor:help;flex:none}
+button.q:hover,button.q:focus-visible{color:var(--accent);border-color:var(--accent)}
+#tip{position:fixed;z-index:20;max-width:min(300px,calc(100vw - 16px));padding:8px 10px;border-radius:6px;background:var(--fg);color:var(--panel);font-size:.78rem;line-height:1.45;box-shadow:0 4px 14px rgba(0,0,0,.18);pointer-events:none}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;font-size:.8rem;padding:5px 9px;border-radius:5px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+button:hover,button:focus-visible{border-color:var(--accent);outline:none;color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-color:var(--accent)}
+.view{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;min-width:0}
+.card header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--line);font-size:.8rem;color:var(--muted)}
+.card header b{color:var(--fg);font-weight:600}
+#three{width:100%;height:420px;display:block;touch-action:none;cursor:grab}
+#plane{width:100%;height:320px;display:block}
+#ripple{width:100%;height:150px;display:block;border-top:1px solid var(--line)}
+.scrub{display:flex;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.scrub input{flex:1;min-width:0;accent-color:var(--accent)}
+.scrub output{font-family:var(--mono);font-size:.8rem;min-width:7ch;text-align:right;font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line)}
+.stat{background:var(--panel);padding:10px 14px}
+.stat span{display:flex;align-items:center;gap:.35em;font-size:.72rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.stat b{font-family:var(--mono);font-weight:500;font-size:.92rem;font-variant-numeric:tabular-nums}
+.chip{display:inline-block;font-size:.7rem;padding:0 7px;border-radius:99px;border:1px solid currentColor;margin-left:6px;vertical-align:1px}
+.ok{color:var(--accent)} .warn{color:var(--accent2)} .bad{color:var(--bad)}
+.legend{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.72rem;flex-wrap:wrap}
+.legend i{display:inline-block;width:60px;height:8px;border-radius:2px;background:linear-gradient(90deg,var(--seq0),var(--seq1))}
+.plegend{list-style:none;margin:0;padding:10px 14px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.78rem;color:var(--fg)}
+.plegend li{display:flex;align-items:center;gap:7px}
+.plegend .sw{position:relative;display:inline-block;width:22px;height:var(--w);background:var(--c);border-radius:2px;opacity:var(--o,1)}
+.plegend .pt{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--c);margin:0 7px}
+.note{font-size:.78rem;color:var(--muted);padding:10px 14px;border-top:1px solid var(--line);margin:0}
+.busy{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="top"><h1>Trajectoid Piece Explorer</h1><a href="./">← Contact-line explorer (continuous shell)</a></div>
+
+<div class="app">
+<aside class="rail">
+  <div class="group"><h2>Presets</h2><div class="btns" id="presets"></div></div>
+  <div class="group" id="g-body"><h2>Body</h2></div>
+  <div class="group" id="g-path"><h2>Path program κ(s)</h2></div>
+  <div class="group" id="g-line"><h2>Contact line on the plane</h2></div>
+  <div class="group" id="g-piece"><h2>Pieces</h2></div>
+  <div class="fn"><p><sup class="src">*</sup> Sobolev et al., <i>Nature</i> 620 (2023) 파라미터 (논문 값: r 15.88 mm, R/r 1.3)</p>
+  <p><sup class="src">†</sup> 논문의 입력 경로 T에 해당. 여기서는 곡률 = 상수 + 사인파로 단순화</p>
+  <p>표시 없음: 이 연구에서 추가한 파라미터 (contact line 변형·조각화)</p></div>
+</aside>
+
+<main class="view">
+  <section class="card">
+    <header><span><b>Pieces</b> · drag to orbit, wheel to zoom <span class="busy" id="busy"></span></span>
+      <span class="btns"><button type="button" id="follow" aria-pressed="true">Roll pose</button><button type="button" class="q" aria-label="Roll pose 설명" aria-describedby="tip" data-tip="켜짐: 슬라이더 s 위치에서 몸체가 바닥에 놓인 자세로 회전하고, 바닥에 실제로 닿은 조각이 주황색으로 표시된다. 바닥 높이는 조각으로 계산한 실제 CM 높이를 따른다. 꺼짐: 몸체 좌표에 고정된 모습.">?</button>
+      <span class="legend">stroke 0 <i></i> max<button type="button" class="q" aria-label="Stroke 색 설명" aria-describedby="tip" data-tip="조각이 끝까지 나온 위치(바깥면 중심이 R)에서 구 중심 방향으로 들어간 행정 d. 연한 색 0 = 펼침(도랑 벽), 진한 색 = 가장 깊이 눌림(contact curve 위). 빨강 = 이웃 조각과 겹치는(간섭) 조각, 주황 = 지금 s에서 바닥에 닿은 조각.">?</button> · <span class="bad">■ interference</span> · <span class="warn">■ in contact</span></span></span></header>
+    <canvas id="three"></canvas>
+    <div class="scrub"><button type="button" id="play">Play</button><button type="button" class="q" aria-label="s 슬라이더 설명" aria-describedby="tip" data-tip="s = 경로를 따라 굴러간 거리(mm). 슬라이더로 고르거나 Play로 자동 진행한다. 3D 자세, Plane의 현재 접촉, Ripple 그래프의 세로선이 함께 움직인다.">?</button>
+      <label for="s">s</label><input type="range" id="s" min="0" max="1000" value="0"><output id="o-s"></output></div>
+    <div class="stats" id="stats"></div>
+  </section>
+  <section class="card">
+    <header><span><b>Plane</b> · ideal contact line vs real piece contact (top view)</span><span id="pinfo"></span></header>
+    <canvas id="plane"></canvas>
+    <ul class="plegend">
+      <li><i class="sw" style="--c:var(--accent);--w:3px"></i>Path<button type="button" class="q" aria-label="Path 설명" aria-describedby="tip" data-tip="이상적인 구가 미끄럼·pivot 없이 구를 때 CM 아래 접촉점의 궤적. 조각 때문에 생기는 경로 변화는 계산하지 않는다(운동학 기준선). 빨간 구간은 연속 껍질에서도 벽이 사라지는 곳이다.">?</button></li>
+      <li><i class="sw" style="--c:var(--muted);--w:1.5px"></i>Ideal contact line<button type="button" class="q" aria-label="Ideal contact line 설명" aria-describedby="tip" data-tip="연속 껍질(Contact-line explorer)일 때의 contact line. 조각 근사가 완벽하면 실제 접촉이 이 선 전체에 걸쳐야 한다.">?</button></li>
+      <li><i class="sw" style="--c:var(--accent2);--w:5px;--o:.55"></i>Real contact extent<button type="button" class="q" aria-label="Real contact extent 설명" aria-describedby="tip" data-tip="조각 꼭짓점 가운데 바닥 평면에서 허용오차(0.2 mm) 안에 있는 점들의 좌우 범위. 이상적 선보다 짧으면 일부 조각만 닿아 실제 접촉이 점 몇 개로 줄었다는 뜻이다.">?</button></li>
+      <li><i class="pt" style="--c:var(--accent2)"></i>Real contact points at s<button type="button" class="q" aria-label="Real contact points 설명" aria-describedby="tip" data-tip="현재 s에서 바닥에 닿은 조각 꼭짓점의 실제 위치. 선 모양으로 늘어서면 선 접촉, 몇 점으로 모이면 점 접촉이다.">?</button></li>
+    </ul>
+    <canvas id="ripple"></canvas>
+    <p class="note">Ripple chart: real CM height minus r along the path (0 = continuous Sobolev shell). Positive bumps mean the body rides on protruding piece edges; the vertical line marks s. Geometry and no-slip kinematics only: no dynamics, slipping or collisions between pieces and ground.</p>
+  </section>
+</main>
+</div>
+<div id="tip" role="tooltip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const nrm=v=>{const l=Math.hypot(v[0],v[1],v[2]);return [v[0]/l,v[1]/l,v[2]/l];};
+const FREQ=[4,6,8,10,12,16];
+const CTL=[
+ ["g-body","r","CM height / core r",50,120,0.1,80.4,v=>v.toFixed(1)+" mm","무거운 core의 반지름. CM이 이 높이에서 구르고, 이상적인 접촉점은 모두 이 구 위에 있다.","*"],
+ ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"조각이 끝까지 나왔을 때 바깥면 반지름 R과 r의 비. 도랑 깊이 R − r(= 최대 행정)과 contact line 최대 반길이 √(R² − r²)을 정한다.","*"],
+ ["g-path","k0","Mean curvature κ0",-6,6,0.05,2.5,v=>v.toFixed(2)+" /m"+(Math.abs(v)>0.01?` (ρ ${(1000/Math.abs(v)).toFixed(0)} mm)`:""),"경로 곡률의 일정한 부분(1/m). 0이면 직선, 2.5 /m이면 반지름 400 mm 호.","†"],
+ ["g-path","k1","Wave amplitude κ1",0,8,0.05,0,v=>v.toFixed(2)+" /m","κ0에 더하는 사인파 곡률의 진폭. 0이 아니면 S자 경로.","†"],
+ ["g-path","lam","Wavelength λ",200,1600,10,800,v=>v.toFixed(0)+" mm","곡률 사인파가 한 번 반복되는 경로 길이.","†"],
+ ["g-path","S","Path length",100,2000,10,600,v=>v.toFixed(0)+" mm","굴려서 몸체에 깎아 넣는 경로 길이. 조각 페이지는 계산량 때문에 2000 mm까지.","†"],
+ ["g-line","aL","Line half-length left aL",0,100,0.5,100,v=>v.toFixed(1)+" mm","CM 아래 점에서 contact line이 왼쪽으로 뻗는 길이. 최대 √(R² − r²)."],
+ ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","오른쪽 길이. aL과 다르면 비대칭 contact line."],
+ ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","contact line 가운데를 비우는 구간의 반폭(two-rail). 조각이 r보다 안쪽으로 들어가야 한다."],
+ ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각 바깥면 중심이 들어갈 수 있는 최소 반지름. 최대 행정 = R − min(r, 이 값)."],
+ ["g-piece","fi","Tiling (Goldberg)",0,5,1,4,v=>{const n=FREQ[v];return `n ${n} → ${10*n*n+2} pieces`;},"측지 분할(icosphere, 주파수 n)의 dual 다면체. 조각 10n²+2개, 육각형과 오각형 12개. 362·642·1442는 이전 PhysX 측지 분할 시뮬레이션과 같은 수다."],
+ ["g-piece","kw","Piece width",60,100,1,77,v=>v.toFixed(0)+" % of cell","조각 폭을 칸(cell) 크기의 몇 %로 만들지. 100%면 펼쳤을 때 틈이 없지만 눌리면 반지름 방향 이동 때문에 이웃과 겹친다. r/R(≈ 77%)이면 끝까지 눌러도 겹치지 않는 대신 펼쳤을 때 틈이 벌어진다."],
+];
+const SEGS=[
+ ["face","Piece face",[["R","R sphere"],["r","r sphere"],["flat","Flat"]],"R","조각 바깥면의 고정 곡률. 강체 조각은 행정에 따라 면이 평행이동만 한다. R sphere: 펼친 상태(벽)에서 정확. r sphere: 끝까지 눌린 상태(CM 아래)에서 r 구면과 일치. Flat: 평면."],
+ ["rule","Stroke rule",[["center","Centre on target"],["noprot","No protrusion"]],"center","각 조각의 행정을 정하는 규칙. Centre on target: 바깥면 중심을 목표 표면(ρ = min(R, r/cos δ))에 맞춤. No protrusion: 면의 중심·꼭짓점·변 중점이 목표 표면 밖으로 나오지 않도록 필요한 만큼 더 누름."],
+];
+const PRESETS={
+ "Arc ρ400":{k0:2.5,k1:0,S:600,aL:100,aR:100,g:0,rmin:80.4},
+ "Straight":{k0:0,k1:0,S:600,aL:100,aR:100,g:0,rmin:80.4},
+ "S-curve":{k0:0,k1:4,lam:800,S:800,aL:100,aR:100,g:0,rmin:80.4},
+ "Short line":{k0:2.5,k1:0,S:600,aL:15,aR:15,g:0,rmin:80.4},
+ "Two-rail":{k0:2.5,k1:0,S:600,aL:100,aR:100,g:30,rmin:70},
+};
+const P={face:"R",rule:"center"}, outs={};
+const tipBtn=(lab,t)=>`<button type="button" class="q" aria-label="${lab} 설명" aria-describedby="tip" data-tip="${t}">?</button>`;
+for(const [grp,id,lab,mn,mx,st,v,fmt,help,src] of CTL){
+  const d=document.createElement("div"); d.className="ctl";
+  d.innerHTML=`<span class="lab"><label for="${id}">${lab}${src?`<sup class="src">${src}</sup>`:""}</label>${tipBtn(lab,help)}</span><output id="o-${id}"></output><input type="range" id="${id}" min="${mn}" max="${mx}" step="${st}" value="${v}">`;
+  $(grp).appendChild(d); outs[id]=[d.querySelector("output"),fmt];
+  d.querySelector("input").addEventListener("input",schedule);
+}
+for(const [key,lab,opts,def,help] of SEGS){
+  const d=document.createElement("div"); d.className="seg";
+  d.innerHTML=`<span class="lab">${lab}${tipBtn(lab,help)}</span><div class="btns" role="group" aria-label="${lab}">${opts.map(([v,t])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${v===def}">${t}</button>`).join("")}</div>`;
+  $("g-piece").appendChild(d);
+}
+document.querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{P[b.dataset.k]=b.dataset.v;
+  document.querySelectorAll(`button[data-k="${b.dataset.k}"]`).forEach(x=>x.setAttribute("aria-pressed",x===b)); schedule();});
+for(const name in PRESETS){const b=document.createElement("button");b.type="button";b.textContent=name;
+  b.onclick=()=>{for(const k in PRESETS[name])$(k).value=PRESETS[name][k];schedule();};$("presets").appendChild(b);}
+function readP(){
+  for(const c of CTL){P[c[1]]=+$(c[1]).value; outs[c[1]][0].textContent=outs[c[1]][1](P[c[1]]);}
+  P.R=P.r*P.ratio; P.amax=Math.sqrt(P.R*P.R-P.r*P.r);
+  P.aLe=Math.min(P.aL,P.amax); P.aRe=Math.min(P.aR,P.amax); P.n=FREQ[P.fi]; P.k=P.kw/100;
+  P.dmax=P.R-Math.min(P.r,P.rmin);
+}
+
+/* ---- help tooltips (delegated) ---- */
+const tip=$("tip");
+function showTip(b){ tip.textContent=b.dataset.tip; tip.hidden=false;
+  const r=b.getBoundingClientRect(), w=tip.offsetWidth, h=tip.offsetHeight;
+  tip.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2))+"px";
+  tip.style.top=(r.bottom+6+h<innerHeight ? r.bottom+6 : r.top-6-h)+"px"; }
+const hideTip=()=>{tip.hidden=true;};
+const qOf=e=>e.target.closest&&e.target.closest("button.q");
+for(const ev of ["pointerover","focusin","click"]) document.addEventListener(ev,e=>{const b=qOf(e); if(b) showTip(b);});
+for(const ev of ["pointerout","focusout"]) document.addEventListener(ev,e=>{if(qOf(e)) hideTip();});
+addEventListener("keydown",e=>{if(e.key==="Escape")hideTip();});
+addEventListener("scroll",hideTip,{passive:true});
+
+/* ---- rolling kinematics (same as contact-line explorer) ---- */
+function rot(a,t){const c=Math.cos(t),s=Math.sin(t),C=1-c,[x,y,z]=a;
+  return [c+x*x*C,x*y*C-z*s,x*z*C+y*s, y*x*C+z*s,c+y*y*C,y*z*C-x*s, z*x*C-y*s,z*y*C+x*s,c+z*z*C];}
+function mul(A,B){const o=new Array(9);for(let i=0;i<3;i++)for(let j=0;j<3;j++)o[i*3+j]=A[i*3]*B[j]+A[i*3+1]*B[3+j]+A[i*3+2]*B[6+j];return o;}
+const mulT=(Q,v)=>[Q[0]*v[0]+Q[3]*v[1]+Q[6]*v[2],Q[1]*v[0]+Q[4]*v[1]+Q[7]*v[2],Q[2]*v[0]+Q[5]*v[1]+Q[8]*v[2]];
+let SM=[];
+function program(){
+  const ds=5,n=Math.max(2,Math.round(P.S/ds)); let x=0,y=0,psi=0,Q=[1,0,0,0,1,0,0,0,1]; const out=[];
+  for(let k=0;k<=n;k++){
+    const s=k*ds, bw=[-Math.sin(psi),Math.cos(psi),0], vw=[Math.cos(psi),Math.sin(psi),0];
+    out.push({s,x,y,psi,Q,c:mulT(Q,[0,0,-1]),b:mulT(Q,bw),t:mulT(Q,vw)});
+    const kap=(P.k0+P.k1*Math.sin(2*Math.PI*s/P.lam))/1000;
+    Q=mul(rot(bw,ds/P.r),Q); x+=Math.cos(psi)*ds; y+=Math.sin(psi)*ds; psi+=kap*ds;
+  }
+  return out;
+}
+function radiusAlong(u){
+  let rho=P.R;
+  for(const p of SM){
+    const d=dot(u,p.c); if(d<1e-3) continue;
+    let rs=P.r/d; const lat=rs*dot(u,p.b);
+    if(lat>P.aLe||lat<-P.aRe) continue;
+    if(Math.abs(lat)<P.g) rs=Math.min(rs,P.rmin);
+    if(rs<rho) rho=rs;
+  }
+  return Math.max(rho,Math.min(P.rmin,P.r));
+}
+function cutBy(pt,p){
+  const h=dot(pt,p.c), lat=dot(pt,p.b);
+  if(lat>P.aLe||lat<-P.aRe) return false;
+  if(Math.abs(lat)<P.g) return h>Math.min(P.rmin,P.r)+0.05 && P.rmin<P.r;
+  return h>P.r+0.05;
+}
+function markErased(){
+  const K=8;
+  const survive=(i,sgn,a)=>{ if(a<=0) return 0; const p=SM[i];
+    for(let k=1;k<=K;k++){ const t=sgn*a*k/K; if(Math.abs(t)<P.g) continue;
+      const pt=[P.r*p.c[0]+t*p.b[0],P.r*p.c[1]+t*p.b[1],P.r*p.c[2]+t*p.b[2]];
+      for(let j=0;j<SM.length;j++){ if(Math.abs(j-i)<=2)continue; if(cutBy(pt,SM[j])) return a*(k-1)/K; } }
+    return a; };
+  for(let i=0;i<SM.length;i++){ const p=SM[i]; p.sL=survive(i,1,P.aLe); p.sR=survive(i,-1,P.aRe);
+    const f=Math.min(P.aLe>0?p.sL/P.aLe:1, P.aRe>0?p.sR/P.aRe:1); p.lost=f<0.3; }
+}
+
+/* ---- Goldberg tiling (dual of geodesic icosphere), cached per frequency ---- */
+const tilingCache={};
+function goldberg(n){
+  if(tilingCache[n]) return tilingCache[n];
+  const t=(1+Math.sqrt(5))/2;
+  const V=[[-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],[0,-1,t],[0,1,t],[0,-1,-t],[0,1,-t],[t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1]].map(nrm);
+  const F=[[0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],[1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],[3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],[4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1]];
+  const verts=[],key=new Map(),tris=[];
+  const id=p=>{const k=p.map(v=>Math.round(v*1e5)).join(",");let i=key.get(k);if(i===undefined){i=verts.length;verts.push(p);key.set(k,i);}return i;};
+  for(const [a,b,c] of F){const A=V[a],B=V[b],C=V[c],g=[];
+    for(let i=0;i<=n;i++){g[i]=[];for(let j=0;j<=n-i;j++){const w=n-i-j;g[i][j]=id(nrm([A[0]*w+B[0]*i+C[0]*j,A[1]*w+B[1]*i+C[1]*j,A[2]*w+B[2]*i+C[2]*j]));}}
+    for(let i=0;i<n;i++)for(let j=0;j<n-i;j++){tris.push([g[i][j],g[i+1][j],g[i][j+1]]);if(j<n-i-1)tris.push([g[i+1][j],g[i+1][j+1],g[i][j+1]]);}}
+  const cent=tris.map(([a,b,c])=>nrm([verts[a][0]+verts[b][0]+verts[c][0],verts[a][1]+verts[b][1]+verts[c][1],verts[a][2]+verts[b][2]+verts[c][2]]));
+  const adj=verts.map(()=>[]); tris.forEach((tr,k)=>tr.forEach(v=>adj[v].push(k)));
+  const cells=verts.map((c,i)=>{const h=Math.abs(c[0])<0.9?[1,0,0]:[0,1,0];
+    const e1=nrm([h[1]*c[2]-h[2]*c[1],h[2]*c[0]-h[0]*c[2],h[0]*c[1]-h[1]*c[0]]), e2=[c[1]*e1[2]-c[2]*e1[1],c[2]*e1[0]-c[0]*e1[2],c[0]*e1[1]-c[1]*e1[0]];
+    const q=adj[i].map(k=>cent[k]).sort((a,b)=>Math.atan2(dot(a,e2),dot(a,e1))-Math.atan2(dot(b,e2),dot(b,e1)));
+    return {c,q};});
+  const em=new Map(); tris.forEach((tr,k)=>{for(let e=0;e<3;e++){const a=tr[e],b=tr[(e+1)%3],kk=a<b?a+","+b:b+","+a;(em.get(kk)||em.set(kk,[]).get(kk)).push(k);}});
+  const pairs=[]; for(const [kk,ts] of em){ if(ts.length!==2) continue; const [a,b]=kk.split(",").map(Number);
+    const m=nrm([cent[ts[0]][0]+cent[ts[1]][0],cent[ts[0]][1]+cent[ts[1]][1],cent[ts[0]][2]+cent[ts[1]][2]]); pairs.push([a,b,m]); }
+  const ell=Math.sqrt(4*Math.PI/cells.length);
+  return tilingCache[n]={cells,pairs,ell};
+}
+
+/* ---- piece geometry ---- */
+// point on a piece face (extended state, before stroke) along unit direction u; c = piece axis
+function facePt(u,c){
+  if(P.face==="flat"){const s=P.R/Math.max(dot(u,c),0.2);return [u[0]*s,u[1]*s,u[2]*s];}
+  if(P.face==="r"){const oc=P.R-P.r, uo=oc*dot(u,c), t=uo+Math.sqrt(Math.max(uo*uo-oc*oc+P.r*P.r,0));return [u[0]*t,u[1]*t,u[2]*t];}
+  return [u[0]*P.R,u[1]*P.R,u[2]*P.R];
+}
+const towards=(c,q,f)=>nrm([c[0]+f*(q[0]-c[0]),c[1]+f*(q[1]-c[1]),c[2]+f*(q[2]-c[2])]);
+const L=3, WALL=7;
+let PC=null; // computed pieces
+function computePieces(){
+  const T=goldberg(P.n), pcs=[];
+  for(const cell of T.cells){
+    const {c,q}=cell, nc=q.length, qk=q.map(v=>towards(c,v,P.k));
+    // depth from target surface
+    const need=u=>{const p=facePt(u,c),r=Math.hypot(p[0],p[1],p[2]),uh=[p[0]/r,p[1]/r,p[2]/r];return (r-radiusAlong(uh))/Math.max(dot(uh,c),0.2);};
+    let d=need(c);
+    if(P.rule==="noprot"){ for(let e=0;e<nc;e++){ d=Math.max(d,need(qk[e]),need(nrm([qk[e][0]+qk[(e+1)%nc][0],qk[e][1]+qk[(e+1)%nc][1],qk[e][2]+qk[(e+1)%nc][2]]))); } }
+    d=Math.max(0,Math.min(P.dmax,d));
+    pcs.push({c,qk,nc,d,bad:false});
+  }
+  // interference / gaps at each shared edge midpoint
+  let minClr=1e9,maxClr=-1e9,maxStep=0;
+  for(const [a,b,m] of T.pairs){
+    const A=pcs[a],B=pcs[b];
+    const ua=towards(A.c,m,P.k), ub=towards(B.c,m,P.k);
+    const pa=facePt(ua,A.c), pb=facePt(ub,B.c);
+    for(let i=0;i<3;i++){pa[i]-=A.d*A.c[i];pb[i]-=B.d*B.c[i];}
+    const dc=[B.c[0]-A.c[0],B.c[1]-A.c[1],B.c[2]-A.c[2]], dm=dot(dc,m), e=nrm([dc[0]-dm*m[0],dc[1]-dm*m[1],dc[2]-dm*m[2]]);
+    const clr=(pb[0]-pa[0])*e[0]+(pb[1]-pa[1])*e[1]+(pb[2]-pa[2])*e[2];
+    minClr=Math.min(minClr,clr); maxClr=Math.max(maxClr,clr);
+    if(clr<-0.05){A.bad=B.bad=true;}
+    if(A.d>0.5&&B.d>0.5&&A.d<P.dmax-0.01&&B.d<P.dmax-0.01) maxStep=Math.max(maxStep,Math.abs(dot(pa,m)-dot(pb,m)));
+  }
+  PC={T,pcs,minClr,maxClr,maxStep,nBad:pcs.filter(p=>p.bad).length};
+}
+// face vertices: centre + L rings over boundary polygon (L samples per edge)
+let FV=null, FO=null; // face vertex positions (body frame), owner piece
+function buildMeshData(){
+  const pcs=PC.pcs; let nv=0, nt=0;
+  for(const p of pcs){const M=p.nc*L; nv+=1+L*M+M; nt+=M+2*M*(L-1)+2*M;}
+  const pos=new Float32Array(nv*3), own=new Int32Array(nv), isWall=new Uint8Array(nv), idx=new Uint32Array(nt*3);
+  const fv=[], fo=[]; let v=0,t=0;
+  pcs.forEach((p,pi)=>{
+    const {c,qk,nc,d}=p, M=nc*L, base=v;
+    const put=(pt,w)=>{pos[v*3]=pt[0];pos[v*3+1]=pt[1];pos[v*3+2]=pt[2];own[v]=pi;isWall[v]=w;if(!w){fv.push(pt[0],pt[1],pt[2]);fo.push(pi);}return v++;};
+    const place=u=>{const f=facePt(u,c);return [f[0]-d*c[0],f[1]-d*c[1],f[2]-d*c[2]];};
+    const B=[]; for(let e=0;e<nc;e++)for(let s=0;s<L;s++){const a=qk[e],b=qk[(e+1)%nc],f=s/L;B.push(nrm([a[0]+f*(b[0]-a[0]),a[1]+f*(b[1]-a[1]),a[2]+f*(b[2]-a[2])]));}
+    put(place(c),0);
+    for(let j=1;j<=L;j++)for(let m=0;m<M;m++)put(place(towards(c,B[m],j/L)),0);
+    const ring=(j,m)=>base+1+(j-1)*M+(m%M);
+    for(let m=0;m<M;m++){idx[t++]=base;idx[t++]=ring(1,m);idx[t++]=ring(1,m+1);}
+    for(let j=1;j<L;j++)for(let m=0;m<M;m++){const a=ring(j,m),b=ring(j,m+1),cc=ring(j+1,m),dd=ring(j+1,m+1);idx[t++]=a;idx[t++]=cc;idx[t++]=b;idx[t++]=b;idx[t++]=cc;idx[t++]=dd;}
+    const wb=v; for(let m=0;m<M;m++){const o=ring(L,m);put([pos[o*3]-WALL*c[0],pos[o*3+1]-WALL*c[1],pos[o*3+2]-WALL*c[2]],1);}
+    for(let m=0;m<M;m++){const a=ring(L,m),b=ring(L,m+1),aw=wb+m,bw=wb+(m+1)%M;idx[t++]=a;idx[t++]=b;idx[t++]=aw;idx[t++]=b;idx[t++]=bw;idx[t++]=aw;}
+  });
+  FV=new Float32Array(fv); FO=new Int32Array(fo);
+  return {pos,own,isWall,idx};
+}
+/* ---- support: real CM height above the ground and contact extent at each sample ---- */
+const TOL=0.2;
+function computeSupport(){
+  const n=FV.length/3;
+  for(const p of SM){
+    const c=p.c,b=p.b; let h=-1e9;
+    for(let i=0;i<n;i++){const z=FV[i*3]*c[0]+FV[i*3+1]*c[1]+FV[i*3+2]*c[2]; if(z>h)h=z;}
+    let lo=1e9,hi=-1e9;
+    for(let i=0;i<n;i++){const z=FV[i*3]*c[0]+FV[i*3+1]*c[1]+FV[i*3+2]*c[2]; if(z>=h-TOL){const lat=FV[i*3]*b[0]+FV[i*3+1]*b[1]+FV[i*3+2]*b[2]; if(lat<lo)lo=lat; if(lat>hi)hi=lat;}}
+    p.h=h; p.rip=h-P.r; p.lo=lo; p.hi=hi;
+  }
+}
+function contactAt(p){
+  const n=FV.length/3, c=p.c,b=p.b,t=p.t, pts=[], owners=new Set();
+  for(let i=0;i<n;i++){const z=FV[i*3]*c[0]+FV[i*3+1]*c[1]+FV[i*3+2]*c[2]; if(z>=p.h-TOL){pts.push([FV[i*3]*t[0]+FV[i*3+1]*t[1]+FV[i*3+2]*t[2], FV[i*3]*b[0]+FV[i*3+1]*b[1]+FV[i*3+2]*b[2]]); owners.add(FO[i]);}}
+  return {pts,owners};
+}
+
+/* ---- three.js ---- */
+const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const cv=$("three"), renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene(), cam=new THREE.PerspectiveCamera(35,1,1,6000);
+scene.add(new THREE.HemisphereLight(0xffffff,0x445555,0.75)); const dl=new THREE.DirectionalLight(0xffffff,0.6); dl.position.set(200,400,300); scene.add(dl);
+const grp=new THREE.Group(); grp.matrixAutoUpdate=false; scene.add(grp);
+const Mp=v=>[v[0],v[2],-v[1]];
+const geo=new THREE.BufferGeometry(); const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.7,metalness:0,side:THREE.DoubleSide})); grp.add(mesh);
+const curveMat=new THREE.LineBasicMaterial(); let curveObj=null;
+const ground=new THREE.Mesh(new THREE.CircleGeometry(260,64),new THREE.MeshBasicMaterial({transparent:true,opacity:0.18,side:THREE.DoubleSide})); ground.rotation.x=-Math.PI/2; scene.add(ground);
+let az=-0.7,el=0.35,dist=580; function placeCam(){cam.position.set(dist*Math.cos(el)*Math.sin(az),dist*Math.sin(el),dist*Math.cos(el)*Math.cos(az));cam.lookAt(0,-20,0);}
+let follow=true, si=0, MD=null, baseCol=null, cur={pts:[],owners:new Set()};
+function buildThree(){
+  MD=buildMeshData();
+  const n=MD.pos.length/3, p3=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const q=Mp([MD.pos[i*3],MD.pos[i*3+1],MD.pos[i*3+2]]);p3[i*3]=q[0];p3[i*3+1]=q[1];p3[i*3+2]=q[2];}
+  geo.dispose(); geo.setAttribute("position",new THREE.BufferAttribute(p3,3)); geo.setIndex(new THREE.BufferAttribute(MD.idx,1));
+  const c0=new THREE.Color(tok("--seq0")),c1=new THREE.Color(tok("--seq1")),cb=new THREE.Color(tok("--bad")),tmp=new THREE.Color();
+  baseCol=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const pc=PC.pcs[MD.own[i]]; if(pc.bad) tmp.copy(cb); else tmp.copy(c0).lerp(c1,pc.d/Math.max(P.dmax,1e-6)); if(MD.isWall[i]) tmp.multiplyScalar(0.72);
+    baseCol[i*3]=tmp.r;baseCol[i*3+1]=tmp.g;baseCol[i*3+2]=tmp.b;}
+  geo.setAttribute("color",new THREE.BufferAttribute(new Float32Array(baseCol),3)); geo.computeVertexNormals(); geo.computeBoundingSphere();
+  if(curveObj){grp.remove(curveObj);curveObj.geometry.dispose();}
+  const cp=[]; SM.forEach((p,i)=>{if(i){cp.push(...Mp(SM[i-1].c.map(v=>v*P.r)),...Mp(p.c.map(v=>v*P.r)));}});
+  const g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(cp,3)); curveObj=new THREE.LineSegments(g,curveMat); grp.add(curveObj);
+  curveObj.visible=!follow;
+}
+function recolorContact(){
+  const col=geo.attributes.color.array; col.set(baseCol);
+  if(follow){const ca=new THREE.Color(tok("--accent2")); const n=col.length/3;
+    for(let i=0;i<n;i++) if(cur.owners.has(MD.own[i])){const f=MD.isWall[i]?0.72:1;col[i*3]=ca.r*f;col[i*3+1]=ca.g*f;col[i*3+2]=ca.b*f;}}
+  geo.attributes.color.needsUpdate=true;
+}
+function theme(){renderer.setClearColor(new THREE.Color(tok("--panel"))); curveMat.color.set(tok("--accent2")); ground.material.color.set(tok("--muted"));}
+function pose(){
+  const p=SM[si]; cur=contactAt(p);
+  if(follow){const Q=p.Q,A=[1,0,0,0,0,1,0,-1,0],At=[1,0,0,0,0,-1,0,1,0],W=mul(mul(A,Q),At);
+    grp.matrix.set(W[0],W[1],W[2],0,W[3],W[4],W[5],0,W[6],W[7],W[8],0,0,0,0,1); ground.position.set(0,-p.h-0.3,0); ground.visible=true;}
+  else {grp.matrix.identity(); ground.visible=false;}
+  if(curveObj) curveObj.visible=!follow;
+  grp.matrixWorldNeedsUpdate=true; recolorContact();
+  $("o-s").textContent=p.s.toFixed(0)+" mm";
+}
+function render(){placeCam();renderer.render(scene,cam);}
+
+/* ---- plane + ripple ---- */
+const pc=$("plane"),px=pc.getContext("2d"), rc=$("ripple"), rx=rc.getContext("2d");
+function fit(cnv,ctx){const dpr=Math.min(devicePixelRatio,2),w=cnv.clientWidth,h=cnv.clientHeight;cnv.width=w*dpr;cnv.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=tok("--panel");ctx.fillRect(0,0,w,h);return [w,h];}
+function drawPlane(){
+  const [w,h]=fit(pc,px);
+  const A=Math.max(P.aLe,P.aRe)+10; let x0=-A,x1=A,y0=-A,y1=A; for(const p of SM){x0=Math.min(x0,p.x-A);x1=Math.max(x1,p.x+A);y0=Math.min(y0,p.y-A);y1=Math.max(y1,p.y+A);}
+  const pad=26,sc=Math.min((w-2*pad)/(x1-x0),(h-2*pad)/(y1-y0)),cx=w/2-sc*(x0+x1)/2,cy=h/2+sc*(y0+y1)/2,X=x=>cx+sc*x,Y=y=>cy-sc*y;
+  const span=Math.max(x1-x0,y1-y0),stp=[50,100,200,250,500,1000].find(s=>span/s<=8)||1000;
+  px.strokeStyle=tok("--line");px.lineWidth=1;px.fillStyle=tok("--muted");px.font="11px "+tok("--mono");
+  for(let gx=Math.ceil((-cx/sc)/stp)*stp;X(gx)<w;gx+=stp){px.beginPath();px.moveTo(X(gx),0);px.lineTo(X(gx),h);px.stroke();px.fillText(gx,X(gx)+3,h-6);}
+  for(let gy=Math.ceil((-(h-cy)/sc)/stp)*stp;Y(gy)>0;gy+=stp){px.beginPath();px.moveTo(0,Y(gy));px.lineTo(w,Y(gy));px.stroke();px.fillText(gy,4,Y(gy)-3);}
+  px.fillText("mm",w-26,h-6);
+  const seg=(p,t0,t1)=>{const bx=-Math.sin(p.psi),by=Math.cos(p.psi);px.beginPath();px.moveTo(X(p.x+t0*bx),Y(p.y+t0*by));px.lineTo(X(p.x+t1*bx),Y(p.y+t1*by));px.stroke();};
+  SM.forEach((p,i)=>{ if(i%8)return;
+    px.globalAlpha=0.55;px.strokeStyle=tok("--accent2");px.lineWidth=5; if(p.hi>p.lo) seg(p,p.lo,p.hi);
+    px.globalAlpha=1;px.strokeStyle=tok("--muted");px.lineWidth=1.2; seg(p,-p.sR,p.sL); });
+  px.lineWidth=2.5; for(let i=1;i<SM.length;i++){const a=SM[i-1],b=SM[i];px.strokeStyle=b.lost?tok("--bad"):tok("--accent");px.beginPath();px.moveTo(X(a.x),Y(a.y));px.lineTo(X(b.x),Y(b.y));px.stroke();}
+  const p=SM[si],vx=Math.cos(p.psi),vy=Math.sin(p.psi),bx=-vy,by=vx; px.fillStyle=tok("--accent2");
+  for(const [f,l] of cur.pts){px.beginPath();px.arc(X(p.x+f*vx+l*bx),Y(p.y+f*vy+l*by),2.6,0,7);px.fill();}
+  px.fillStyle=tok("--accent");px.beginPath();px.arc(X(0),Y(0),3.5,0,7);px.fill();px.fillStyle=tok("--muted");px.fillText("start",X(0)+6,Y(0)+12);
+  $("pinfo").textContent=`${cur.pts.length} contact vertices on ${cur.owners.size} pieces at s`;
+}
+function drawRipple(){
+  const [w,h]=fit(rc,rx); const l=46,r=12,t=14,b=24;
+  let lo=0,hi=0.5; for(const p of SM){lo=Math.min(lo,p.rip);hi=Math.max(hi,p.rip);}
+  const X=s=>l+(w-l-r)*s/Math.max(P.S,1), Y=v=>t+(h-t-b)*(hi-v)/(hi-lo||1);
+  rx.font="11px "+tok("--mono"); rx.fillStyle=tok("--muted"); rx.strokeStyle=tok("--line"); rx.lineWidth=1;
+  const ticks=[lo,0,hi].filter((v,i,a)=>a.indexOf(v)===i);
+  for(const v of ticks){rx.beginPath();rx.moveTo(l,Y(v));rx.lineTo(w-r,Y(v));rx.stroke();rx.fillText(v.toFixed(1),4,Y(v)+4);}
+  rx.fillText("CM ripple (mm)",l+4,t-3); rx.fillText("s (mm)",w-r-44,h-6); rx.fillText("0",l,h-6); rx.fillText(P.S.toFixed(0),w-r-28,h-14);
+  rx.strokeStyle=tok("--accent");rx.lineWidth=1.8;rx.beginPath();SM.forEach((p,i)=>i?rx.lineTo(X(p.s),Y(p.rip)):rx.moveTo(X(p.s),Y(p.rip)));rx.stroke();
+  rx.strokeStyle=tok("--accent2");rx.lineWidth=1.5;rx.beginPath();rx.moveTo(X(SM[si].s),t);rx.lineTo(X(SM[si].s),h-b);rx.stroke();
+}
+
+/* ---- stats ---- */
+function showStats(){
+  const T=PC.T, n=SM.length, rips=SM.map(p=>p.rip), rmax=Math.max(...rips), rrms=Math.sqrt(rips.reduce((a,v)=>a+v*v,0)/n);
+  const wReal=SM.reduce((a,p)=>a+(p.hi-p.lo),0)/n, wIdeal=SM.reduce((a,p)=>a+p.sL+p.sR,0)/n, lost=SM.filter(p=>p.lost).length;
+  const dm=Math.max(...PC.pcs.map(p=>p.d));
+  const items=[
+   ["Pieces",`${T.cells.length} · ℓ ≈ ${(T.ell*P.R).toFixed(1)} mm`,"조각 수 10n²+2와 펼친 상태(반지름 R)에서의 평균 크기 ℓ ≈ √(4πR²/N)."],
+   ["Max stroke",`${dm.toFixed(1)} / ${P.dmax.toFixed(1)} mm`,"가장 깊이 눌린 조각의 행정 / 허용 최대 행정 R − min(r, inner limit). 같으면 목표를 맞추려다 한계에 걸린 조각이 있다."],
+   ["Interference",PC.nBad?`<span class="chip bad">${PC.nBad} pieces</span> ${(-PC.minClr).toFixed(1)} mm`:`<span class="chip ok">none</span>`,"이웃 조각의 공유 변 중점에서 잰 겹침. 조각이 구 중심 방향으로 들어가면 옆 조각 쪽으로 다가가므로, 폭을 줄이지 않으면 겹친다. 빨간 조각이 해당한다."],
+   ["Max open gap",`${Math.max(0,PC.maxClr).toFixed(1)} mm`,"이웃 조각 사이 가장 큰 틈. 조각 폭을 줄이면 펼친 상태(벽)에서 틈이 벌어진다. 틈이 접촉선에 걸리면 덜컹거림이 생긴다."],
+   ["Step on contact surface",`${PC.maxStep.toFixed(2)} mm`,"펼침·끝까지 눌림이 아닌 중간 행정 조각끼리, 공유 변에서 반지름 방향 높이 차이의 최댓값. Sobolev 연속 면에서는 0이다."],
+   ["CM ripple max / RMS",`${rmax.toFixed(2)} / ${rrms.toFixed(2)} mm`,"구르는 동안 실제 CM 높이 − r. 연속 Sobolev 껍질이면 0이고, 양수는 튀어나온 조각 모서리를 타고 오른다는 뜻이다. 아래 그래프 참고."],
+   ["Contact width real / ideal",`${wReal.toFixed(0)} / ${wIdeal.toFixed(0)} mm`,"경로 평균. 실제로 바닥에서 0.2 mm 안에 있는 조각 꼭짓점의 좌우 폭 / 연속 껍질의 contact line 길이. 실제 폭이 훨씬 작으면 선 접촉이 점 접촉으로 무너졌다는 뜻이다."],
+   ["Guidance lost (ideal)",`${(100*lost/n).toFixed(0)}%`,"연속 껍질 기준으로 contact line 한쪽이 30% 미만만 남은 경로 비율(Contact-line explorer와 같은 지표)."],
+  ];
+  $("stats").innerHTML=items.map(([k,v,tp])=>`<div class="stat"><span>${k}${tipBtn(k,tp)}</span><b>${v}</b></div>`).join("");
+}
+
+/* ---- loop ---- */
+let pending=false;
+function schedule(){ if(pending) return; pending=true; $("busy").textContent="computing…"; requestAnimationFrame(()=>setTimeout(()=>{pending=false; rebuild(); $("busy").textContent="";},0)); }
+function rebuild(){
+  readP(); SM=program(); markErased(); computePieces(); theme(); buildThree(); computeSupport();
+  si=Math.min(SM.length-1,Math.round(+$("s").value/1000*(SM.length-1)));
+  showStats(); pose(); drawPlane(); drawRipple(); render();
+}
+function scrub(){ si=Math.min(SM.length-1,Math.round(+$("s").value/1000*(SM.length-1))); pose(); drawPlane(); drawRipple(); render(); }
+$("s").addEventListener("input",scrub);
+$("follow").onclick=()=>{follow=!follow;$("follow").setAttribute("aria-pressed",follow);pose();drawPlane();render();};
+let playing=false; $("play").onclick=()=>{playing=!playing;$("play").textContent=playing?"Pause":"Play";if(playing)step();};
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function step(){ if(!playing)return; let v=+$("s").value+(reduce?20:4); if(v>1000)v=0; $("s").value=v; scrub(); requestAnimationFrame(step); }
+let drag=null; cv.addEventListener("pointerdown",e=>{drag=[e.clientX,e.clientY];cv.setPointerCapture(e.pointerId);cv.style.cursor="grabbing";});
+cv.addEventListener("pointermove",e=>{if(!drag)return;az-=(e.clientX-drag[0])*0.01;el=Math.max(-1.4,Math.min(1.4,el+(e.clientY-drag[1])*0.01));drag=[e.clientX,e.clientY];render();});
+cv.addEventListener("pointerup",()=>{drag=null;cv.style.cursor="grab";});
+cv.addEventListener("wheel",e=>{e.preventDefault();dist=Math.max(200,Math.min(2000,dist*(e.deltaY>0?1.08:0.93)));render();},{passive:false});
+function size(){const w=cv.clientWidth,h=cv.clientHeight;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+new ResizeObserver(()=>{size();if(SM.length&&PC){drawPlane();drawRipple();render();}}).observe(cv);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",rebuild);
+size(); rebuild();
+</script>
+</body>
+</html>
