@@ -132,10 +132,11 @@ const CTL=[
  ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","오른쪽 길이. aL과 다르면 비대칭 contact line."],
  ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","contact line 가운데를 비우는 구간의 반폭(two-rail). 조각이 r보다 안쪽으로 들어가야 한다."],
  ["g-line","rmin","Piece inner limit (core)",40,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각 바깥면 중심이 들어갈 수 있는 최소 반지름. 최대 단차 = R − min(r, 이 값)."],
- ["g-piece","fi","Tiling (Goldberg)",0,5,1,4,v=>{const n=FREQ[v];return `n ${n} → ${10*n*n+2} pieces`;},"측지 분할(icosphere, 주파수 n)의 dual 다면체. 조각 10n²+2개, 육각형과 오각형 12개. 362·642·1442는 이전 PhysX 측지 분할 시뮬레이션과 같은 수다."],
+ ["g-piece","fi","Tiling (Goldberg)",0,5,1,4,v=>{const n=FREQ[v];return `n ${n} → ${10*n*n+2} pieces`;},"측지 분할(icosphere, 주파수 n)의 dual 다면체. 조각 10n²+2개, 육각형과 오각형 12개(구를 육각형·오각형으로 덮으려면 Euler 공식상 오각형이 정확히 12개 필요). 362·642·1442는 이전 PhysX 측지 분할 시뮬레이션과 같은 수다. 면적 균등화는 아래 Cell areas에서 고른다."],
  ["g-piece","kw","Piece width",60,100,1,77,v=>v.toFixed(0)+" % of cell","조각 폭을 칸(cell) 크기의 몇 %로 만들지. 100%면 펼쳤을 때 틈이 없지만 눌리면 반지름 방향 이동 때문에 이웃과 겹친다. r/R(≈ 77%)이면 끝까지 눌러도 겹치지 않는 대신 펼쳤을 때 틈이 벌어진다."],
 ];
 const SEGS=[
+ ["tiling","Cell areas",[["eq","Equalized"],["raw","Raw Goldberg"]],"eq","Equalized: 칸 꼭짓점을 반복해서 옮겨 모든 조각 면적을 4πR²/N으로 맞춘 분할(오차 0.1% 이내). 육각형·오각형 구조는 유지되고 꼭짓점 각도는 108–131°로 볼록하다. Raw Goldberg: 원래 측지 분할 dual로, 오각형 12개는 평균의 약 0.5배, 육각형은 0.8–1.2배."],
  ["face","Piece face",[["R","R sphere"],["r","r sphere"],["flat","Flat"]],"R","조각 바깥면의 고정 곡률. 강체 조각은 단차에 따라 면이 평행이동만 한다. R sphere: 펼친 상태(벽)에서 정확. r sphere: 끝까지 눌린 상태(CM 아래)에서 r 구면과 일치. Flat: 평면."],
  ["rule","Stroke rule",[["center","Centre on target"],["noprot","No protrusion"]],"center","각 조각의 단차을 정하는 규칙. Centre on target: 바깥면 중심을 목표 표면(ρ = min(R, r/cos δ))에 맞춤. No protrusion: 면의 중심·꼭짓점·변 중점이 목표 표면 밖으로 나오지 않도록 필요한 만큼 더 누름."],
 ];
@@ -146,7 +147,7 @@ const PRESETS={
  "Short line":{k0:2.5,k1:0,S:600,aL:15,aR:15,g:0,rmin:80.4},
  "Two-rail":{k0:2.5,k1:0,S:600,aL:100,aR:100,g:30,rmin:70},
 };
-const P={face:"R",rule:"center"}, outs={};
+const P={face:"R",rule:"center",tiling:"eq"}, outs={};
 const tipBtn=(lab,t)=>`<button type="button" class="q" aria-label="${lab} 설명" aria-describedby="tip" data-tip="${t}">?</button>`;
 for(const [grp,id,lab,mn,mx,st,v,fmt,help,src] of CTL){
   const d=document.createElement("div"); d.className="ctl";
@@ -229,8 +230,24 @@ function markErased(){
 
 /* ---- Goldberg tiling (dual of geodesic icosphere), cached per frequency ---- */
 const tilingCache={};
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const sTri=(a,b,c)=>2*Math.atan2(Math.abs(dot(a,cross(b,c))),1+dot(a,b)+dot(b,c)+dot(c,a));
+const cCentre=(Q,ix)=>nrm(ix.reduce((s,k)=>[s[0]+Q[k][0],s[1]+Q[k][1],s[2]+Q[k][2]],[0,0,0]));
+const cArea=(Q,ix)=>{const c=cCentre(Q,ix);let a=0;for(let i=0;i<ix.length;i++)a+=sTri(c,Q[ix[i]],Q[ix[(i+1)%ix.length]]);return a;};
+// move cell corners until every cell has area 4π/N: per-cell Newton step on the corners, damped (corners are shared by 3 cells)
+function equalizeAreas(Q,cells){
+  const m=4*Math.PI/cells.length;
+  for(let it=0;it<500;it++){
+    const G=Q.map(()=>[0,0,0]); let worst=0;
+    for(const ix of cells){const c=cCentre(Q,ix),k=ix.length,dA=cArea(Q,ix)-m,gs=[];let S=0; worst=Math.max(worst,Math.abs(dA)/m);
+      for(let i=0;i<k;i++){const a=Q[ix[(i+1)%k]],b=Q[ix[(i+k-1)%k]];const g=cross([a[0]-b[0],a[1]-b[1],a[2]-b[2]],c);gs.push(g);S+=dot(g,g);}
+      const f=-2*dA/S; for(let i=0;i<k;i++){const q=G[ix[i]];q[0]+=f*gs[i][0];q[1]+=f*gs[i][1];q[2]+=f*gs[i][2];}}
+    if(worst<1e-3) break;
+    for(let j=0;j<Q.length;j++){const p=Q[j];Q[j]=nrm([p[0]+0.3*G[j][0],p[1]+0.3*G[j][1],p[2]+0.3*G[j][2]]);}
+  }
+}
 function goldberg(n){
-  if(tilingCache[n]) return tilingCache[n];
+  const ck=n+P.tiling; if(tilingCache[ck]) return tilingCache[ck];
   const t=(1+Math.sqrt(5))/2;
   const V=[[-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],[0,-1,t],[0,1,t],[0,-1,-t],[0,1,-t],[t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1]].map(nrm);
   const F=[[0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],[1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],[3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],[4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1]];
@@ -241,15 +258,17 @@ function goldberg(n){
     for(let i=0;i<n;i++)for(let j=0;j<n-i;j++){tris.push([g[i][j],g[i+1][j],g[i][j+1]]);if(j<n-i-1)tris.push([g[i+1][j],g[i+1][j+1],g[i][j+1]]);}}
   const cent=tris.map(([a,b,c])=>nrm([verts[a][0]+verts[b][0]+verts[c][0],verts[a][1]+verts[b][1]+verts[c][1],verts[a][2]+verts[b][2]+verts[c][2]]));
   const adj=verts.map(()=>[]); tris.forEach((tr,k)=>tr.forEach(v=>adj[v].push(k)));
-  const cells=verts.map((c,i)=>{const h=Math.abs(c[0])<0.9?[1,0,0]:[0,1,0];
-    const e1=nrm([h[1]*c[2]-h[2]*c[1],h[2]*c[0]-h[0]*c[2],h[0]*c[1]-h[1]*c[0]]), e2=[c[1]*e1[2]-c[2]*e1[1],c[2]*e1[0]-c[0]*e1[2],c[0]*e1[1]-c[1]*e1[0]];
-    const q=adj[i].map(k=>cent[k]).sort((a,b)=>Math.atan2(dot(a,e2),dot(a,e1))-Math.atan2(dot(b,e2),dot(b,e1)));
-    return {c,q};});
+  const cix=verts.map((c,i)=>{const h=Math.abs(c[0])<0.9?[1,0,0]:[0,1,0];
+    const e1=nrm(cross(h,c)), e2=cross(c,e1);
+    return adj[i].slice().sort((a,b)=>Math.atan2(dot(cent[a],e2),dot(cent[a],e1))-Math.atan2(dot(cent[b],e2),dot(cent[b],e1)));});
+  if(P.tiling==="eq") equalizeAreas(cent,cix);
+  const cells=cix.map(ix=>({c:cCentre(cent,ix),q:ix.map(k=>cent[k])}));
+  const areas=cix.map(ix=>cArea(cent,ix)), am=4*Math.PI/cix.length, aMin=Math.min(...areas)/am, aMax=Math.max(...areas)/am;
   const em=new Map(); tris.forEach((tr,k)=>{for(let e=0;e<3;e++){const a=tr[e],b=tr[(e+1)%3],kk=a<b?a+","+b:b+","+a;(em.get(kk)||em.set(kk,[]).get(kk)).push(k);}});
   const pairs=[]; for(const [kk,ts] of em){ if(ts.length!==2) continue; const [a,b]=kk.split(",").map(Number);
     const m=nrm([cent[ts[0]][0]+cent[ts[1]][0],cent[ts[0]][1]+cent[ts[1]][1],cent[ts[0]][2]+cent[ts[1]][2]]); pairs.push([a,b,m]); }
   const ell=Math.sqrt(4*Math.PI/cells.length);
-  return tilingCache[n]={cells,pairs,ell};
+  return tilingCache[ck]={cells,pairs,ell,aMin,aMax};
 }
 
 /* ---- piece geometry ---- */
@@ -414,7 +433,7 @@ function showStats(){
   const wReal=SM.reduce((a,p)=>a+(p.hi-p.lo),0)/n, wIdeal=SM.reduce((a,p)=>a+p.sL+p.sR,0)/n, lost=SM.filter(p=>p.lost).length;
   const dm=Math.max(...PC.pcs.map(p=>p.d));
   const items=[
-   ["Pieces",`${T.cells.length} · ℓ ≈ ${(T.ell*P.R).toFixed(1)} mm`,"조각 수 10n²+2와 펼친 상태(반지름 R)에서의 평균 크기 ℓ ≈ √(4πR²/N)."],
+   ["Pieces",`${T.cells.length} · ℓ ≈ ${(T.ell*P.R).toFixed(1)} mm · area ${T.aMin.toFixed(2)}–${T.aMax.toFixed(2)}×`,"조각 수 10n²+2, 펼친 상태(반지름 R)에서의 평균 크기 ℓ ≈ √(4πR²/N), 조각 면적의 최소–최대(평균 대비). Equalized면 1.00–1.00."],
    ["Max stroke",`${dm.toFixed(1)} / ${P.dmax.toFixed(1)} mm`,"가장 깊이 눌린 조각의 단차 / 허용 최대 단차 R − min(r, inner limit). 같으면 목표를 맞추려다 한계에 걸린 조각이 있다."],
    ["Interference",PC.nBad?`<span class="chip bad">${PC.nBad} pieces</span> ${(-PC.minClr).toFixed(1)} mm`:`<span class="chip ok">none</span>`,"이웃 조각의 공유 변 중점에서 잰 겹침. 조각이 구 중심 방향으로 들어가면 옆 조각 쪽으로 다가가므로, 폭을 줄이지 않으면 겹친다. 빨간 조각이 해당한다."],
    ["Max open gap",`${Math.max(0,PC.maxClr).toFixed(1)} mm`,"이웃 조각 사이 가장 큰 틈. 조각 폭을 줄이면 펼친 상태(벽)에서 틈이 벌어진다. 틈이 접촉선에 걸리면 덜컹거림이 생긴다."],
