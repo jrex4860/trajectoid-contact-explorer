@@ -152,11 +152,11 @@ const CTL=[
 const SEGS=[
  ["tiling","Cell areas",[["eq","Equalized"],["raw","Raw Goldberg"]],"eq","Equalized: 모든 조각 면적을 똑같이 맞춤. Raw: 원래 분할(조각 크기가 조금씩 다름)."],
  ["face","Piece face",[["R","R sphere"],["r","r sphere"],["flat","Flat"]],"R","조각 바깥면 모양. 조각이 작으면 거의 차이가 없다."],
- ["rule","Stroke rule",[["center","Centre on target"],["noprot","No protrusion"]],"center","조각을 얼마나 들여보낼지 정하는 방법. Centre: 조각 중심을 목표 면에 맞춤. No protrusion: 조각이 목표 면 밖으로 튀어나오지 않게 맞춤(더 매끄러움)."],
+ ["rule","Stroke rule",[["center","Centre on target"],["noprot","No protrusion"],["zero","None (d = 0)"]],"center","조각을 얼마나 들여보낼지 정하는 방법. Centre: 조각 중심을 목표 면에 맞춤. No protrusion: 조각이 목표 면 밖으로 튀어나오지 않게 맞춤(더 매끄러움). None: 모든 조각을 들여보내지 않음(평행이동 0 mm, R 구면 위에 그대로)."],
 ];
-const PRESET0={r:80.4,ratio:1.3,fi:4,kw:77}; // body/tiling defaults, so presets don't inherit each other's values
+const PRESET0={r:80.4,ratio:1.3,fi:4,kw:77,rule:"center"}; // body/tiling defaults, so presets don't inherit each other's values
 const PRESETS={
- "Straight r40 n4":{k0:0,k1:0,S:1000,aL:100,aR:100,g:0,rmin:40,r:40,ratio:1.3,fi:0,kw:77},
+ "Straight r40 n4":{k0:0,k1:0,S:1000,aL:100,aR:100,g:0,rmin:40,r:40,ratio:1.3,fi:0,kw:77,rule:"zero"},
  "Straight":{k0:0,k1:0,S:1000,aL:100,aR:100,g:0,rmin:80.4},
  "Arc ρ400":{k0:2.5,k1:0,S:600,aL:100,aR:100,g:0,rmin:80.4},
  "Arc ρ200":{k0:5,k1:0,S:420,aL:100,aR:100,g:0,rmin:80.4},
@@ -182,7 +182,10 @@ for(const [key,lab,opts,def,help] of SEGS){
 document.querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{P[b.dataset.k]=b.dataset.v;
   document.querySelectorAll(`button[data-k="${b.dataset.k}"]`).forEach(x=>x.setAttribute("aria-pressed",x===b)); schedule();});
 for(const name in PRESETS){const b=document.createElement("button");b.type="button";b.textContent=name;
-  b.onclick=()=>{const v={...PRESET0,...PRESETS[name]};for(const k in v)$(k).value=v[k];schedule();};$("presets").appendChild(b);}
+  b.onclick=()=>{const v={...PRESET0,...PRESETS[name]};
+    for(const k in v){ if($(k)){$(k).value=v[k];continue;} P[k]=v[k]; // segmented option (e.g. rule)
+      document.querySelectorAll(`button[data-k="${k}"]`).forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===v[k])); }
+    schedule();};$("presets").appendChild(b);}
 function readP(){
   for(const c of CTL){P[c[1]]=+$(c[1]).value; outs[c[1]][0].textContent=outs[c[1]][1](P[c[1]]);}
   P.R=P.r*P.ratio; P.amax=Math.sqrt(P.R*P.R-P.r*P.r);
@@ -313,7 +316,7 @@ function computePieces(){
     const need=u=>{const p=facePt(u,c),r=Math.hypot(p[0],p[1],p[2]),uh=[p[0]/r,p[1]/r,p[2]/r];return (r-radiusAlong(uh))/Math.max(dot(uh,c),0.2);};
     let d=need(c);
     if(P.rule==="noprot"){ for(let e=0;e<nc;e++){ d=Math.max(d,need(qk[e]),need(nrm([qk[e][0]+qk[(e+1)%nc][0],qk[e][1]+qk[(e+1)%nc][1],qk[e][2]+qk[(e+1)%nc][2]]))); } }
-    d=Math.max(0,Math.min(P.dmax,d));
+    d=P.rule==="zero"?0:Math.max(0,Math.min(P.dmax,d));
     pcs.push({c,qk,nc,d,bad:false});
   }
   // interference / gaps at each shared edge midpoint
