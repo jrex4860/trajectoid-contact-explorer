@@ -58,6 +58,11 @@ button[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-c
 .ok{color:var(--accent)} .warn{color:var(--accent2)} .bad{color:var(--bad)}
 .legend{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.72rem}
 .legend i{display:inline-block;width:70px;height:8px;border-radius:2px;background:linear-gradient(90deg,var(--seq0),var(--seq1))}
+.plegend{list-style:none;margin:0;padding:10px 14px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.78rem;color:var(--fg)}
+.plegend li{display:flex;align-items:center;gap:7px}
+.plegend .sw{position:relative;display:inline-block;width:22px;height:var(--w);background:var(--c);border-radius:2px}
+.plegend .sw.dot::after{content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--c)}
+.plegend .pt{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--c);margin:0 7px}
 .note{font-size:.78rem;color:var(--muted);padding:10px 14px;border-top:1px solid var(--line);margin:0}
 footer{color:var(--muted);font-size:.75rem;margin-top:16px}
 </style>
@@ -88,6 +93,14 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
   <section class="card">
     <header><span><b>Plane</b> · path and contact lines on the ground (top view)</span><span id="pinfo"></span></header>
     <canvas id="plane"></canvas>
+    <ul class="plegend" aria-label="Plane legend">
+      <li><i class="sw" style="--c:var(--accent);--w:3px"></i>Path (point under the CM)</li>
+      <li><i class="sw" style="--c:var(--muted);--w:1.5px"></i>Contact line, full length</li>
+      <li><i class="sw" style="--c:var(--accent2);--w:1.5px"></i>Contact line shortened (wall partly cut)</li>
+      <li><i class="sw" style="--c:var(--bad);--w:2px"></i>Wall lost (&lt; 30% left on one side)</li>
+      <li><i class="sw dot" style="--c:var(--accent2);--w:3px"></i>Current position s</li>
+      <li><i class="pt" style="--c:var(--accent)"></i>Start</li>
+    </ul>
     <p class="note">Contact segments are drawn every 40 mm, perpendicular to the path through the point under the CM. Each segment shows how much of the contact line survives after the whole path is shaved. The point under the CM always survives, but when the contact curve wraps the body other parts of the path cut the line ends, which removes the trench walls (orange: shortened, red: under 30% left on one side). This is Sobolev's periodicity limit. A hollow centre needs pieces that retract below r (core &lt; r) and gives two-rail contact.</p>
   </section>
 </main>
