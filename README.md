@@ -13,5 +13,5 @@ Open `index.html` in a browser, or visit the GitHub Pages site.
 
 ## Pages
 
-- `index.html`: continuous Sobolev-style shell, contact-line explorer.
+- `index.html`: continuous Sobolev-style shell, contact-line explorer. Export the current body as binary STL (mm, 180×360 or 360×720 grid).
 - `pieces.html`: the same body built from rigid prismatic pieces on a Goldberg tiling (piece strokes, interference, real contact, CM ripple).

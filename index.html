@@ -79,6 +79,7 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
 <div class="app">
 <aside class="rail">
   <div class="group"><h2>Presets</h2><div class="btns" id="presets"></div></div>
+  <div class="group"><h2>Export</h2><div class="btns"><button type="button" data-stl="180">STL 180×360</button><button type="button" data-stl="360">STL 360×720</button><button type="button" class="q" aria-label="STL 설명" aria-describedby="tip" data-tip="지금 보이는 몸체 모양을 3D 프린트용 STL 파일(mm)로 받는다. 숫자가 클수록 매끄럽지만 파일이 크다(약 6 MB / 25 MB). 속이 꽉 찬 바깥 껍데기만 들어 있다.">?</button></div></div>
   <div class="group" id="g-body"><h2>Body</h2></div>
   <div class="group" id="g-path"><h2>Path program κ(s)</h2></div>
   <div class="group" id="g-line"><h2>Contact line on the plane</h2></div>
@@ -339,6 +340,29 @@ cv.addEventListener("wheel",e=>{e.preventDefault();dist=Math.max(200,Math.min(20
 function size(){const w=cv.clientWidth,h=cv.clientHeight;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
 new ResizeObserver(()=>{size();drawPlane();render();}).observe(cv);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change",rebuild);
+/* ---- STL export: closed radial mesh rho(u) on a finer lat-long grid, body frame (z up), mm ---- */
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+function exportSTL(nu){
+  const nv=2*nu, V=[];
+  for(let i=0;i<=nu;i++){const th=Math.PI*i/nu;for(let j=0;j<nv;j++){const ph=2*Math.PI*j/nv;
+    const u=[Math.sin(th)*Math.cos(ph),Math.sin(th)*Math.sin(ph),Math.cos(th)], rho=radiusAlong(u); V.push([u[0]*rho,u[1]*rho,u[2]*rho]);}}
+  const at=(i,j)=>V[i*nv+(j%nv)], T=[];
+  for(let i=0;i<nu;i++)for(let j=0;j<nv;j++){
+    if(i>0) T.push([at(i,j),at(i+1,j),at(i,j+1)]);          // skip zero-area tris at the poles
+    if(i<nu-1) T.push([at(i+1,j),at(i+1,j+1),at(i,j+1)]); }
+  const buf=new ArrayBuffer(84+50*T.length), dv=new DataView(buf); dv.setUint32(80,T.length,true); let o=84;
+  for(let [a,b,c] of T){
+    let n=cross([b[0]-a[0],b[1]-a[1],b[2]-a[2]],[c[0]-a[0],c[1]-a[1],c[2]-a[2]]);
+    if(dot(n,[a[0]+b[0]+c[0],a[1]+b[1]+c[1],a[2]+b[2]+c[2]])<0){[b,c]=[c,b];n=n.map(x=>-x);}  // star-shaped body: outward = away from centre
+    const L=Math.hypot(...n)||1;
+    for(const x of [n[0]/L,n[1]/L,n[2]/L,...a,...b,...c]){dv.setFloat32(o,x,true);o+=4;} o+=2; }
+  const f=v=>(+v.toFixed(2)).toString(), name=`trajectoid_r${f(P.r)}_R${f(P.ratio)}_k${f(P.k0)}_${f(P.k1)}_lam${f(P.lam)}_S${f(P.S)}_${nu}x${nv}.stl`;
+  const url=URL.createObjectURL(new Blob([buf],{type:"model/stl"})), el=document.createElement("a");
+  el.href=url; el.download=name; el.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+  return {tris:T.length,name};
+}
+document.querySelectorAll("button[data-stl]").forEach(b=>b.onclick=()=>{const t=b.textContent; b.textContent="…"; b.disabled=true;
+  setTimeout(()=>{exportSTL(+b.dataset.stl); b.textContent=t; b.disabled=false;},20);});
 size(); rebuild();
 </script>
 </body>
