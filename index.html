@@ -90,7 +90,7 @@ footer{color:var(--muted);font-size:.75rem;margin-top:16px}
   <section class="card">
     <header><span><b>Body</b> · drag to orbit, wheel to zoom</span>
       <span class="btns"><button type="button" id="follow" aria-pressed="true">Roll pose</button>
-      <span class="legend">depth 0 <i></i> max · <span class="bad">● wall lost</span></span></span></header>
+      <span class="legend">depth 0 <i></i> max<button type="button" class="q" aria-label="Depth 설명" aria-describedby="tip" data-tip="바깥 껍질 R에서 안쪽으로 깎여 들어간 깊이 = 조각 행정. depth = R − ρ, ρ = min(R, r/cos δ). 0(연한 색)은 깎이지 않은 R 껍질(도랑 벽·캡), 최대(진한 색)는 contact curve 위 CM 아래 접촉점으로 R − r(기본값 24.1 mm). 가운데 비우기를 쓰면 R − rmin까지 커진다. 아래 Max piece stroke가 최댓값이다.">?</button> · <span class="bad">● wall lost</span></span></span></header>
     <canvas id="three"></canvas>
     <div class="scrub"><button type="button" id="play">Play</button>
       <label for="s">s</label><input type="range" id="s" min="0" max="1000" value="0"><output id="o-s"></output></div>
