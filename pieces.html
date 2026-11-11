@@ -227,13 +227,18 @@ function cutBy(pt,p){
 }
 function markErased(){
   const K=8;
-  const survive=(i,sgn,a)=>{ if(a<=0) return 0; const p=SM[i];
-    for(let k=1;k<=K;k++){ const t=sgn*a*k/K; if(Math.abs(t)<P.g) continue;
-      const pt=[P.r*p.c[0]+t*p.b[0],P.r*p.c[1]+t*p.b[1],P.r*p.c[2]+t*p.b[2]];
-      for(let j=0;j<SM.length;j++){ if(Math.abs(j-i)<=2)continue; if(cutBy(pt,SM[j])) return a*(k-1)/K; } }
-    return a; };
-  for(let i=0;i<SM.length;i++){ const p=SM[i]; p.sL=survive(i,1,P.aLe); p.sR=survive(i,-1,P.aRe);
-    const f=Math.min(P.aLe>0?p.sL/P.aLe:1, P.aRe>0?p.sR/P.aRe:1); p.lost=f<0.3; }
+  // surviving part of each half contact line, as [inner, outer] distance from the CM.
+  // g = 0: walk outward from the CM, stop at the first cut point.
+  // g > 0 (two-rail): only the rail [g, a] touches; walk inward from the outer end (the wall that guides), stop at the first cut.
+  const survive=(i,sgn,a)=>{ const p=SM[i], g=P.g>0?Math.min(P.g,a):0;
+    if(a<=g) return [g,g]; // no rail on this side
+    const at=k=>P.g>0 ? a-(a-g)*k/K : a*k/K, cut=t=>{const pt=[P.r*p.c[0]+sgn*t*p.b[0],P.r*p.c[1]+sgn*t*p.b[1],P.r*p.c[2]+sgn*t*p.b[2]];
+      for(let j=0;j<SM.length;j++){ if(Math.abs(j-i)<=2)continue; if(cutBy(pt,SM[j])) return true; } return false;};
+    for(let k=P.g>0?0:1;k<=K;k++) if(cut(at(k))) return P.g>0 ? [k?at(k-1):a, a] : [0, at(k-1)];
+    return [g,a]; };
+  const frac=(s,a)=>{ if(a<=0) return 1; const full=a-(P.g>0?Math.min(P.g,a):0); return full>0?(s[1]-s[0])/full:0; };
+  for(let i=0;i<SM.length;i++){ const p=SM[i]; p.L=survive(i,1,P.aLe); p.R=survive(i,-1,P.aRe);
+    const f=Math.min(frac(p.L,P.aLe),frac(p.R,P.aRe)); p.lost=f<0.3; }
 }
 
 /* ---- Goldberg tiling (dual of geodesic icosphere), cached per frequency ---- */
@@ -416,7 +421,7 @@ function drawPlane(){
   const seg=(p,t0,t1)=>{const bx=-Math.sin(p.psi),by=Math.cos(p.psi);px.beginPath();px.moveTo(X(p.x+t0*bx),Y(p.y+t0*by));px.lineTo(X(p.x+t1*bx),Y(p.y+t1*by));px.stroke();};
   SM.forEach((p,i)=>{ if(i%8)return;
     px.globalAlpha=0.55;px.strokeStyle=tok("--accent2");px.lineWidth=5; if(p.hi>p.lo) seg(p,p.lo,p.hi);
-    px.globalAlpha=1;px.strokeStyle=tok("--muted");px.lineWidth=1.2; seg(p,-p.sR,p.sL); });
+    px.globalAlpha=1;px.strokeStyle=tok("--muted");px.lineWidth=1.2; seg(p,-p.R[1],-p.R[0]); seg(p,p.L[0],p.L[1]); });
   px.lineWidth=2.5; for(let i=1;i<SM.length;i++){const a=SM[i-1],b=SM[i];px.strokeStyle=b.lost?tok("--bad"):tok("--accent");px.beginPath();px.moveTo(X(a.x),Y(a.y));px.lineTo(X(b.x),Y(b.y));px.stroke();}
   const p=SM[si],vx=Math.cos(p.psi),vy=Math.sin(p.psi),bx=-vy,by=vx; px.fillStyle=tok("--accent2");
   for(const [f,l] of cur.pts){px.beginPath();px.arc(X(p.x+f*vx+l*bx),Y(p.y+f*vy+l*by),2.6,0,7);px.fill();}
@@ -441,7 +446,7 @@ function drawRipple(){
 /* ---- stats ---- */
 function showStats(){
   const T=PC.T, n=SM.length, rips=SM.map(p=>p.rip), rmean=rips.reduce((a,v)=>a+v,0)/n, rp2p=Math.max(...rips)-Math.min(...rips);
-  const wReal=SM.reduce((a,p)=>a+(p.hi-p.lo),0)/n, wIdeal=SM.reduce((a,p)=>a+p.sL+p.sR,0)/n, lost=SM.filter(p=>p.lost).length;
+  const wReal=SM.reduce((a,p)=>a+(p.hi-p.lo),0)/n, wIdeal=SM.reduce((a,p)=>a+p.L[1]-p.L[0]+p.R[1]-p.R[0],0)/n, lost=SM.filter(p=>p.lost).length;
   const dm=Math.max(...PC.pcs.map(p=>p.d));
   const items=[
    ["Pieces",`${T.cells.length} · ℓ ≈ ${(T.ell*P.R).toFixed(1)} mm · area ${T.aMin.toFixed(2)}–${T.aMax.toFixed(2)}×`,"조각 개수, 크기, 면적이 고른 정도(1.00–1.00이면 모두 같음)."],

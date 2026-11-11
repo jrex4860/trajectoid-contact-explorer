@@ -212,15 +212,19 @@ function cutBy(pt,p){
   return h>P.r+0.05;
 }
 function markErased(){
-  // surviving half-length of each contact line (walls cut away by other parts of the path)
   const K=12;
-  const survive=(i,sgn,a)=>{ if(a<=0) return 0; const p=SM[i];
-    for(let k=1;k<=K;k++){ const t=sgn*a*k/K; if(Math.abs(t)<P.g) continue;
-      const pt=[P.r*p.c[0]+t*p.b[0],P.r*p.c[1]+t*p.b[1],P.r*p.c[2]+t*p.b[2]];
-      for(let j=0;j<SM.length;j++){ if(Math.abs(j-i)<=2)continue; if(cutBy(pt,SM[j])) return a*(k-1)/K; } }
-    return a; };
-  for(let i=0;i<SM.length;i++){ const p=SM[i]; p.sL=survive(i,1,P.aLe); p.sR=survive(i,-1,P.aRe);
-    const f=Math.min(P.aLe>0?p.sL/P.aLe:1, P.aRe>0?p.sR/P.aRe:1); p.lost=f<0.3; p.partial=!p.lost&&f<0.95; }
+  // surviving part of each half contact line, as [inner, outer] distance from the CM.
+  // g = 0: walk outward from the CM, stop at the first cut point.
+  // g > 0 (two-rail): only the rail [g, a] touches; walk inward from the outer end (the wall that guides), stop at the first cut.
+  const survive=(i,sgn,a)=>{ const p=SM[i], g=P.g>0?Math.min(P.g,a):0;
+    if(a<=g) return [g,g]; // no rail on this side
+    const at=k=>P.g>0 ? a-(a-g)*k/K : a*k/K, cut=t=>{const pt=[P.r*p.c[0]+sgn*t*p.b[0],P.r*p.c[1]+sgn*t*p.b[1],P.r*p.c[2]+sgn*t*p.b[2]];
+      for(let j=0;j<SM.length;j++){ if(Math.abs(j-i)<=2)continue; if(cutBy(pt,SM[j])) return true; } return false;};
+    for(let k=P.g>0?0:1;k<=K;k++) if(cut(at(k))) return P.g>0 ? [k?at(k-1):a, a] : [0, at(k-1)];
+    return [g,a]; };
+  const frac=(s,a)=>{ if(a<=0) return 1; const full=a-(P.g>0?Math.min(P.g,a):0); return full>0?(s[1]-s[0])/full:0; };
+  for(let i=0;i<SM.length;i++){ const p=SM[i]; p.L=survive(i,1,P.aLe); p.R=survive(i,-1,P.aRe);
+    const f=Math.min(frac(p.L,P.aLe),frac(p.R,P.aRe)); p.lost=f<0.3; p.partial=!p.lost&&f<0.95; }
 }
 
 /* ---- three.js ---- */
@@ -261,7 +265,7 @@ function buildBody(){
   grp.add(curveObj,segObj,lostObj);
   return dmax;
 }
-function strips(p){ const L=p?p.sL:P.aLe, R=p?p.sR:P.aRe; return P.g>0 ? [[-R,-Math.min(P.g,R)],[Math.min(P.g,L),L]] : [[-R,L]]; }
+function strips(p){ const L=p?p.L:[Math.min(P.g,P.aLe),P.aLe], R=p?p.R:[Math.min(P.g,P.aRe),P.aRe]; return P.g>0 ? [[-R[1],-R[0]],[L[0],L[1]]] : [[-R[1],L[1]]]; }
 function theme(){ renderer.setClearColor(new THREE.Color(tok("--panel"))); curveMat.color.set(tok("--accent2")); segMat.color.set(tok("--fg")); lostMat.color.set(tok("--bad"));
   ground.material.color.set(tok("--muted")); curLineMat.color.set(tok("--accent2")); cmDot.material.color.set(tok("--accent2")); }
 function pose(){
@@ -310,14 +314,14 @@ function showStats(dmax){
   const n=SM.length, lost=SM.filter(p=>p.lost).length, part=SM.filter(p=>p.partial).length;
   const ell=Math.sqrt(4*Math.PI*P.R*P.R/P.N), sag=ell*ell/(8*P.r);
   const sup = P.aRe>=3&&P.aLe>=3;
-  const hollowBad = P.g>0 && P.rmin>=P.r;
+  const hollowBad = P.g>0 && P.rmin>=P.r, noRail = P.g>0 && (P.aLe<=P.g || P.aRe<=P.g);
   const items=[
     ["Barrier depth R − r",`${(P.R-P.r).toFixed(1)} mm`],
     ["Line edge angle δmax",`${(Math.acos(P.r/P.R)*180/Math.PI).toFixed(1)}° (a ≤ ${P.amax.toFixed(1)} mm)`],
-    ["Contact line",`${(P.aRe+P.aLe-(P.g>0?2*Math.min(P.g,P.aLe,P.aRe):0)).toFixed(0)} mm ${P.g>0?(hollowBad?'<span class="chip bad">needs core &lt; r</span>':'<span class="chip ok">two-rail</span>'):""}`],
+    ["Contact line",`${(P.g>0?Math.max(0,P.aLe-P.g)+Math.max(0,P.aRe-P.g):P.aLe+P.aRe).toFixed(0)} mm ${P.g>0?(noRail?'<span class="chip bad">no rail (a ≤ g)</span>':hollowBad?'<span class="chip bad">needs core &lt; r</span>':'<span class="chip ok">two-rail</span>'):""}`],
     ["CM support",sup?'<span class="chip ok">inside line</span>':'<span class="chip warn">at line end</span>'],
     ["Max piece stroke",`${dmax.toFixed(1)} mm`],
-    ["Guidance lost (wall &lt; 30%)",`${(100*lost/n).toFixed(0)}% <span class="chip ${lost?"bad":"ok"}">${lost?"wraps":"ok"}</span>${part?` · walls cut ${(100*part/n).toFixed(0)}%`:""}`],
+    ["Guidance lost (wall &lt; 30%)",`${(100*lost/n).toFixed(0)}% <span class="chip ${lost?"bad":"ok"}">${lost?(noRail?"no rail":"wraps"):"ok"}</span>${part?` · walls cut ${(100*part/n).toFixed(0)}%`:""}`],
     ["Piece size / sag",`${ell.toFixed(1)} mm / ${sag.toFixed(2)} mm`],
   ];
   const TIPS={"Barrier depth R − r": "홈의 깊이. 깊을수록 옆으로 잘 안 벗어난다.", "Line edge angle δmax": "바닥에 닿는 선이 끝나는 위치(각도). 그 바깥은 벽이다.", "Contact line": "바닥에 닿는 선의 전체 길이.", "CM support": "몸체 중심 바로 아래가 바닥에 닿아 있는지. 아니면 옆으로 넘어지기 쉽다.", "Max piece stroke": "조각이 가장 깊이 들어가야 하는 거리. 모터가 이만큼 움직일 수 있어야 한다.", "Guidance lost (wall &lt; 30%)": "경로 중 벽이 사라진 부분의 비율. 0%가 좋다.", "Piece size / sag": "조각 하나의 크기와, 조각 때문에 표면이 울퉁불퉁해지는 정도. 작을수록 좋다."};
