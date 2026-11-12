@@ -91,7 +91,6 @@ button[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-c
   <div class="group" id="g-line"><h2>Contact line on the plane</h2></div>
   <div class="group" id="g-piece"><h2>Pieces</h2></div>
   <div class="group"><h2>Export</h2>
-    <div class="ctl"><span class="lab"><label for="dep">STL piece depth</label><button type="button" class="q" aria-label="STL piece depth 설명" aria-describedby="tip" data-tip="조각 prism의 옆벽 높이(바깥면 가장자리에서 평평한 바닥까지). 조각 옆벽은 자기 축과 평행해서 안쪽으로 갈수록 옆 조각과 가까워진다. 표시된 한계(약 (1−폭)·R)보다 길면 조각끼리 겹친다.">?</button></span><output id="o-dep"></output><input type="range" id="dep" min="1" max="20" step="0.5" value="10"></div>
     <div class="btns"><button type="button" id="stlA">STL: all pieces</button><button type="button" id="stl0">STL: stroke-0 pieces</button><button type="button" class="q" aria-label="STL 설명" aria-describedby="tip" data-tip="지금 계산된 조각 몸체를 STL 1개로 받는다(mm, body frame, z up). all: 모든 조각을 각자의 단차만큼 들여보낸 자리에. stroke-0: 단차(평행이동)가 0 mm인 조각만. 조각마다 닫힌 shell이다. 프린트하려면 slicer에서 split to objects.">?</button></div>
     <p class="note" id="o-ovl" style="padding:6px 0 0;border:0"></p>
   </div>
@@ -136,7 +135,8 @@ const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
 const nrm=v=>{const l=Math.hypot(v[0],v[1],v[2]);return [v[0]/l,v[1]/l,v[2]/l];};
 const FREQ=[4,6,8,10,12,16];
 const CTL=[
- ["g-body","r","CM height / core r",15,120,0.1,80.4,v=>v.toFixed(1)+" mm","몸체 중심에 있는 무거운 core의 반지름. 몸체는 늘 이 높이로 구른다.","*"],
+ ["g-body","r","CM height r",15,120,0.1,80.4,v=>v.toFixed(1)+" mm","몸체가 구르는 높이. 조각이 끝까지 들어갔을 때 윗면 중심의 반지름이다(펼쳤을 때는 R = r × R/r).","*"],
+ ["g-body","core","Core radius",0,120,0.1,40,v=>v.toFixed(1)+" mm","몸체 중심에 있는 core(무게추·구동부)의 반지름. 조각 아랫면이 이 안으로 들어가면 STL을 받을 수 없다."],
  ["g-body","ratio","Shell ratio R/r",1.05,2,0.01,1.3,v=>v.toFixed(2),"바깥 껍질이 core보다 몇 배 큰지. 클수록 도랑이 깊어져 경로를 잘 붙잡는다. 논문 값은 1.3.","*"],
  ["g-path","k0","Mean curvature κ0",-6,6,0.05,2.5,v=>v.toFixed(2)+" /m"+(Math.abs(v)>0.01?` (ρ ${(1000/Math.abs(v)).toFixed(0)} mm)`:""),"경로가 얼마나 휘는지. 0이면 직선, 클수록 작은 원을 돈다. 부호는 왼쪽/오른쪽.","†"],
  ["g-path","k1","Wave amplitude κ1",0,8,0.05,0,v=>v.toFixed(2)+" /m","경로를 좌우로 흔드는 정도. 0보다 크면 S자 경로가 된다.","†"],
@@ -145,18 +145,22 @@ const CTL=[
  ["g-line","aL","Line half-length left aL",0,100,0.5,100,v=>v.toFixed(1)+" mm","바닥에 닿는 선이 왼쪽으로 뻗는 길이. 짧으면 왼쪽 벽이 가까워진다."],
  ["g-line","aR","Line half-length right aR",0,100,0.5,100,v=>v.toFixed(1)+" mm","바닥에 닿는 선이 오른쪽으로 뻗는 길이. 왼쪽과 다르게 하면 한쪽 벽만 가까워진다."],
  ["g-line","g","Hollow centre half-width",0,50,0.5,0,v=>v.toFixed(1)+" mm","닿는 선의 가운데를 비우는 폭. 가운데가 떠서 양 끝 두 곳만 닿는다(two-rail)."],
- ["g-line","rmin","Piece inner limit (core)",10,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각이 안쪽으로 들어갈 수 있는 한계. 가운데를 비우려면 core 반지름 r보다 작아야 한다."],
+ ["g-line","rmin","Piece inner limit",10,120,0.1,80.4,v=>v.toFixed(1)+" mm","조각 윗면이 안쪽으로 들어갈 수 있는 한계. 가운데를 비우려면 r보다 작아야 한다."],
  ["g-piece","fi","Tiling (Goldberg)",0,5,1,4,v=>{const n=FREQ[v];return `n ${n} → ${10*n*n+2} pieces`;},"조각을 나누는 방식과 개수. 육각형 조각에 오각형 12개가 섞여 있다. 많을수록 조각이 작다."],
- ["g-piece","kw","Piece width",60,100,1,77,v=>v.toFixed(0)+" % of cell","조각 크기를 칸 대비 몇 %로 할지. 크면 조각끼리 부딪히고, 작으면 틈이 생긴다. 약 77%가 부딪히지 않는 한계."],
+ ["g-piece","kw","Piece width",60,100,1,77,v=>v.toFixed(0)+" % of cell","조각 윗면 크기를 칸 대비 몇 %로 할지. 조각이 모두 끝까지 들어가면 이웃 윗면 사이 틈이 약 (r/R − 폭) × 칸 간격이 되므로, 폭이 r/R(R/r 1.3이면 76.9%)를 넘으면 닿는다."],
+ ["g-piece","dep","Piece height h",1,40,0.1,10,v=>v.toFixed(1)+" mm","조각(잘린 각뿔)의 높이. 윗면 가장자리 중 가장 낮은 점부터 평평한 아랫면까지."],
+ ["g-piece","beta","Bottom ratio β",0.2,1,0.05,1,v=>v.toFixed(2)+(v>=1?" (prism)":""),"아랫면 크기 / 윗면 크기. 1이면 기둥, 작을수록 아래가 좁은 잘린 각뿔. 좁을수록 이웃 조각과 아래에서 겹치지 않는다."],
 ];
 const SEGS=[
  ["tiling","Cell areas",[["eq","Equalized"],["raw","Raw Goldberg"]],"eq","Equalized: 모든 조각 면적을 똑같이 맞춤. Raw: 원래 분할(조각 크기가 조금씩 다름)."],
  ["face","Piece face",[["R","R sphere"],["r","r sphere"],["flat","Flat"]],"R","조각 바깥면 모양. 조각이 작으면 거의 차이가 없다."],
- ["rule","Stroke rule",[["center","Centre on target"],["noprot","No protrusion"],["zero","None (d = 0)"]],"center","조각을 얼마나 들여보낼지 정하는 방법. Centre: 조각 중심을 목표 면에 맞춤. No protrusion: 조각이 목표 면 밖으로 튀어나오지 않게 맞춤(더 매끄러움). None: 모든 조각을 들여보내지 않음(평행이동 0 mm, R 구면 위에 그대로)."],
+ ["rule","Stroke rule",[["center","Centre on target"],["noprot","No protrusion"],["zero","None (d = 0)"],["max","All in (d = dmax)"]],"center","조각을 얼마나 들여보낼지 정하는 방법. Centre: 조각 중심을 목표 면에 맞춤. No protrusion: 조각이 목표 면 밖으로 튀어나오지 않게 맞춤(더 매끄러움). None: 모두 펼침(평행이동 0 mm, 윗면이 R 구면 위). All in: 모두 끝까지 들어감(윗면 중심이 r)."],
+ ["check","Check over",[["full","Full stroke 0–dmax"],["now","Current state"]],"full","STL을 받기 전 겹침·core 검사 범위. Full stroke: 조각마다 단차 0–dmax(5단계) 모든 조합 — 조각이 움직이는 기구일 때. Current state: 지금 보이는 단차만 — 고정된 형상일 때."],
 ];
-const PRESET0={r:80.4,ratio:1.3,fi:4,kw:77,rule:"center"}; // body/tiling defaults, so presets don't inherit each other's values
+const PRESET0={r:80.4,ratio:1.3,fi:4,kw:77,rule:"center",core:40,dep:10,beta:1,check:"full"}; // defaults, so presets don't inherit each other's values
 const PRESETS={
- "Straight r40 n4":{k0:0,k1:0,S:1000,aL:100,aR:100,g:0,rmin:40,r:40,ratio:1.3,fi:0,kw:77,rule:"zero"},
+ "R75 frustum n4":{k0:0,k1:0,S:1000,aL:100,aR:100,g:0,r:57.7,rmin:57.7,ratio:1.3,fi:0,kw:75,rule:"max",core:40,dep:16,beta:0.5,check:"full"},
+ "Straight r40 n4":{k0:0,k1:0,S:1000,aL:100,aR:100,g:0,rmin:40,r:40,ratio:1.3,fi:0,kw:77,rule:"zero",check:"now"},
  "Straight":{k0:0,k1:0,S:1000,aL:100,aR:100,g:0,rmin:80.4},
  "Arc ρ400":{k0:2.5,k1:0,S:600,aL:100,aR:100,g:0,rmin:80.4},
  "Arc ρ200":{k0:5,k1:0,S:420,aL:100,aR:100,g:0,rmin:80.4},
@@ -166,7 +170,7 @@ const PRESETS={
  "Asymmetric":{k0:2.5,k1:0,S:600,aL:60,aR:8,g:0,rmin:80.4},
  "Two-rail":{k0:2.5,k1:0,S:600,aL:100,aR:100,g:30,rmin:70},
 };
-const P={face:"R",rule:"center",tiling:"eq"}, outs={};
+const P={face:"R",rule:"center",tiling:"eq",check:"full"}, outs={};
 const tipBtn=(lab,t)=>`<button type="button" class="q" aria-label="${lab} 설명" aria-describedby="tip" data-tip="${t}">?</button>`;
 for(const [grp,id,lab,mn,mx,st,v,fmt,help,src] of CTL){
   const d=document.createElement("div"); d.className="ctl"+(id==="k0"?" tight":"");
@@ -306,7 +310,11 @@ function facePt(u,c){
   return [u[0]*P.R,u[1]*P.R,u[2]*P.R];
 }
 const towards=(c,q,f)=>nrm([c[0]+f*(q[0]-c[0]),c[1]+f*(q[1]-c[1]),c[2]+f*(q[2]-c[2])]);
-const L=3, WALL=7;
+const L=3;
+// piece = truncated pyramid: top face, side walls from the top edge to a flat bottom ⟂ own axis c at height hb = low − d − h,
+// bottom polygon = top edge scaled by β about the axis. low = lowest top-edge height at d = 0 (the corners, for every face type).
+const lowEdge=p=>Math.min(...p.qk.map(q=>dot(facePt(q,p.c),p.c)));
+const bottomOf=(q,c,hb)=>{const a=dot(q,c);return [P.beta*(q[0]-a*c[0])+hb*c[0],P.beta*(q[1]-a*c[1])+hb*c[1],P.beta*(q[2]-a*c[2])+hb*c[2]];};
 let PC=null; // computed pieces
 function computePieces(){
   const T=goldberg(P.n), pcs=[];
@@ -316,8 +324,8 @@ function computePieces(){
     const need=u=>{const p=facePt(u,c),r=Math.hypot(p[0],p[1],p[2]),uh=[p[0]/r,p[1]/r,p[2]/r];return (r-radiusAlong(uh))/Math.max(dot(uh,c),0.2);};
     let d=need(c);
     if(P.rule==="noprot"){ for(let e=0;e<nc;e++){ d=Math.max(d,need(qk[e]),need(nrm([qk[e][0]+qk[(e+1)%nc][0],qk[e][1]+qk[(e+1)%nc][1],qk[e][2]+qk[(e+1)%nc][2]]))); } }
-    d=P.rule==="zero"?0:Math.max(0,Math.min(P.dmax,d));
-    pcs.push({c,qk,nc,d,bad:false});
+    d=P.rule==="zero"?0:P.rule==="max"?P.dmax:Math.max(0,Math.min(P.dmax,d));
+    const p={c,qk,nc,d,bad:false}; p.low=lowEdge(p); pcs.push(p);
   }
   // interference / gaps at each shared edge midpoint
   let minClr=1e9,maxClr=-1e9,maxStep=0;
@@ -351,22 +359,21 @@ function buildMeshData(){
     const ring=(j,m)=>base+1+(j-1)*M+(m%M);
     for(let m=0;m<M;m++){idx[t++]=base;idx[t++]=ring(1,m);idx[t++]=ring(1,m+1);}
     for(let j=1;j<L;j++)for(let m=0;m<M;m++){const a=ring(j,m),b=ring(j,m+1),cc=ring(j+1,m),dd=ring(j+1,m+1);idx[t++]=a;idx[t++]=cc;idx[t++]=b;idx[t++]=b;idx[t++]=cc;idx[t++]=dd;}
-    const wb=v; for(let m=0;m<M;m++){const o=ring(L,m);put([pos[o*3]-WALL*c[0],pos[o*3+1]-WALL*c[1],pos[o*3+2]-WALL*c[2]],1);}
+    const wb=v, hb=p.low-d-P.dep; for(let m=0;m<M;m++){const o=ring(L,m);put(bottomOf([pos[o*3],pos[o*3+1],pos[o*3+2]],c,hb),1);}
     for(let m=0;m<M;m++){const a=ring(L,m),b=ring(L,m+1),aw=wb+m,bw=wb+(m+1)%M;idx[t++]=a;idx[t++]=b;idx[t++]=aw;idx[t++]=b;idx[t++]=bw;idx[t++]=aw;}
   });
   FV=new Float32Array(fv); FO=new Int32Array(fo);
   return {pos,own,isWall,idx};
 }
-/* ---- STL export: stroke-0 pieces as closed convex prisms (face + wall + flat bottom), body frame (z up), mm ---- */
-function pieceTris(dep,only0){
+/* ---- STL export: pieces as closed convex truncated pyramids (face + wall + flat bottom), body frame (z up), mm ---- */
+function pieceTris(only0){
   const T=[];
   for(const p of PC.pcs){ if(only0&&p.d>1e-6) continue;
     const {c,qk,nc,d}=p, B=[], place=u=>{const f=facePt(u,c);return [f[0]-d*c[0],f[1]-d*c[1],f[2]-d*c[2]];};
     for(let e=0;e<nc;e++)for(let s=0;s<L;s++){const a=qk[e],b=qk[(e+1)%nc],f=s/L;B.push(nrm([a[0]+f*(b[0]-a[0]),a[1]+f*(b[1]-a[1]),a[2]+f*(b[2]-a[2])]));}
     const M=B.length, ctr=place(c), rg=[];
     for(let j=1;j<=L;j++) rg.push(B.map(u=>place(towards(c,u,j/L))));
-    const E=rg[L-1], hb=Math.min(...E.map(q=>dot(q,c)))-dep;
-    const Bt=E.map(q=>{const t=dot(q,c)-hb;return [q[0]-t*c[0],q[1]-t*c[1],q[2]-t*c[2]];}), bc=c.map(x=>x*hb);
+    const E=rg[L-1], hb=p.low-d-P.dep, Bt=E.map(q=>bottomOf(q,c,hb)), bc=c.map(x=>x*hb);
     const inn=[(ctr[0]+bc[0])/2,(ctr[1]+bc[1])/2,(ctr[2]+bc[2])/2], tris=[];
     for(let m=0;m<M;m++){const m1=(m+1)%M;
       tris.push([ctr,rg[0][m],rg[0][m1]]);
@@ -378,43 +385,49 @@ function pieceTris(dep,only0){
   }
   return T;
 }
-// neighbour prisms whose walls cross below the face. Walls run along each piece's own axis, and the axes converge inward,
-// so at the shared edge midpoint the gap shrinks by (t+s)·α/2 at wall depths t, s (α = axis angle); compare points at equal height.
-function wallOverlaps(dep,only0){
-  let n=0,tot=0;
-  for(const [ia,ib,m] of PC.T.pairs){const A=PC.pcs[ia],B=PC.pcs[ib]; if(only0&&(A.d>1e-6||B.d>1e-6)) continue; tot++;
-    const pa=facePt(towards(A.c,m,P.k),A.c),pb=facePt(towards(B.c,m,P.k),B.c);
-    for(let i=0;i<3;i++){pa[i]-=A.d*A.c[i];pb[i]-=B.d*B.c[i];}
+// stroke states to check: every piece over its whole travel (5 steps), or only the shown state
+const strokes=p=>P.check==="full"?[0,.25,.5,.75,1].map(f=>f*P.dmax):[p.d];
+// Neighbours: at the shared edge midpoint m each wall is a segment in the (height along m, offset along e) plane, e ⟂ m from A to B.
+// Over the common height range the gap is linear, so its minimum is at an end. Core: the bottom centre is the point nearest the centre.
+function pieceChecks(only0){
+  const sel=p=>!only0||p.d<=1e-6; let nCore=0,minCore=1e9,n=0,tot=0,minGap=1e9;
+  for(const p of PC.pcs){ if(!sel(p)) continue; const cl=p.low-Math.max(...strokes(p))-P.dep-P.core; minCore=Math.min(minCore,cl); if(cl<0) nCore++; }
+  for(const [ia,ib,m] of PC.T.pairs){const A=PC.pcs[ia],B=PC.pcs[ib]; if(!sel(A)||!sel(B)) continue; tot++;
     const dc=[B.c[0]-A.c[0],B.c[1]-A.c[1],B.c[2]-A.c[2]],dm=dot(dc,m),e=nrm([dc[0]-dm*m[0],dc[1]-dm*m[1],dc[2]-dm*m[2]]);
-    const clr=dot([pb[0]-pa[0],pb[1]-pa[1],pb[2]-pa[2]],e), al=dot(dc,e), D=Math.abs(dot(pb,m)-dot(pa,m));
-    if(clr<-0.05||(D<dep&&clr+0.05<al/2*(2*dep-D))) n++;}  // 0.05 mm tolerance, same as the face check
-  return [n,tot];
+    const seg=(p,d)=>{const t=facePt(towards(p.c,m,P.k),p.c).map((v,i)=>v-d*p.c[i]),b=bottomOf(t,p.c,p.low-d-P.dep);return [dot(t,m),dot(t,e),dot(b,m),dot(b,e)];};
+    const at=([z0,x0,z1,x1],z)=>x0+(x1-x0)*(z-z0)/(z1-z0);
+    let g=1e9;
+    for(const dA of strokes(A)) for(const dB of strokes(B)){ const a=seg(A,dA), b=seg(B,dB);
+      const lo=Math.max(a[2],b[2]), hi=Math.min(a[0],b[0]); if(lo>hi) continue;
+      g=Math.min(g,at(b,lo)-at(a,lo),at(b,hi)-at(a,hi)); }
+    minGap=Math.min(minGap,g); if(g<-0.05) n++;}  // 0.05 mm tolerance, same as the face check
+  return {n,tot,minGap,nCore,minCore};
 }
+const rangeText=()=>P.check==="full"?`단차 0–${P.dmax.toFixed(1)} mm 전체에서`:"지금 단차에서";
 // reasons the exported pieces can't be built as-is; empty = OK
-function exportProblems(dep,only0){
+function exportProblems(only0){
   const sel=PC.pcs.filter(p=>!only0||p.d<=1e-6), out=[];
   if(!sel.length) return ["단차 0 mm인 조각이 없다."];
   const bad=sel.filter(p=>p.bad).length;
-  if(bad) out.push(`Interference: 바깥면에서 ${bad}개 조각이 옆 조각과 부딪힌다 (최대 ${(-PC.minClr).toFixed(2)} mm). Piece width를 줄인다.`);
-  const [n,tot]=wallOverlaps(dep,only0);
-  if(n) out.push(`Wall overlap: 깊이 ${dep.toFixed(1)} mm에서 이웃 ${n} / ${tot}쌍의 옆벽이 바깥면 아래에서 겹친다. STL piece depth나 Piece width를 줄인다.`);
+  if(bad) out.push(`Interference: 지금 상태의 바깥면에서 ${bad}개 조각이 옆 조각과 부딪힌다 (최대 ${(-PC.minClr).toFixed(2)} mm). Piece width를 줄인다.`);
+  const k=pieceChecks(only0);
+  if(k.n) out.push(`Overlap: ${rangeText()} 이웃 ${k.n} / ${k.tot}쌍이 겹친다 (최대 ${(-k.minGap).toFixed(2)} mm). Piece width, Bottom ratio β나 Piece height h를 줄인다.`);
+  if(k.nCore) out.push(`Core: ${rangeText()} ${k.nCore}개 조각의 아랫면이 core(반지름 ${P.core.toFixed(1)} mm) 안으로 들어간다 (최대 ${(-k.minCore).toFixed(2)} mm). Piece height h나 Core radius를 줄인다.`);
   return out;
 }
 function exportPieces(only0){
-  const dep=+$("dep").value, why=exportProblems(dep,only0);
+  const why=exportProblems(only0);
   if(why.length){ $("warn-list").replaceChildren(...why.map(t=>{const li=document.createElement("li");li.textContent=t;return li;})); $("warn").showModal(); return; }
-  const T=pieceTris(dep,only0);
+  const T=pieceTris(only0);
   const buf=new ArrayBuffer(84+50*T.length), dv=new DataView(buf); dv.setUint32(80,T.length,true); let o=84;
   for(const [a,b,c] of T){const n=cross([b[0]-a[0],b[1]-a[1],b[2]-a[2]],[c[0]-a[0],c[1]-a[1],c[2]-a[2]]),l=Math.hypot(...n)||1;
     for(const x of [n[0]/l,n[1]/l,n[2]/l,...a,...b,...c]){dv.setFloat32(o,x,true);o+=4;} o+=2;}
-  const f=v=>(+v.toFixed(2)).toString(), name=`pieces_${only0?"stroke0":"all"}_r${f(P.r)}_R${f(P.ratio)}_k${f(P.k0)}_${f(P.k1)}_S${f(P.S)}_n${P.n}_w${P.kw}_${P.face}_${P.rule}_dep${f(dep)}.stl`;
+  const f=v=>(+v.toFixed(2)).toString(), name=`pieces_${only0?"stroke0":"all"}_r${f(P.r)}_R${f(P.ratio)}_k${f(P.k0)}_${f(P.k1)}_S${f(P.S)}_n${P.n}_w${P.kw}_${P.face}_${P.rule}_h${f(P.dep)}_b${f(P.beta)}_core${f(P.core)}.stl`;
   const url=URL.createObjectURL(new Blob([buf],{type:"model/stl"})), el=document.createElement("a");
   el.href=url; el.download=name; el.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-function showDep(){ const dep=+$("dep").value, [a,at]=wallOverlaps(dep,false), [z,zt]=wallOverlaps(dep,true);
-  $("o-dep").textContent=`${dep.toFixed(1)} mm`;
-  $("o-ovl").textContent=`Wall overlap at this depth (neighbour pairs): all ${a} / ${at} · stroke-0 ${z} / ${zt}`; }
-$("dep").addEventListener("input",showDep);
+function showChecks(){ const k=pieceChecks(false);
+  $("o-ovl").textContent=`Check (${P.check==="full"?`stroke 0–${P.dmax.toFixed(1)} mm`:"current state"}, all pieces): min neighbour gap ${k.minGap.toFixed(2)} mm, ${k.n} / ${k.tot} pairs overlap · core clearance ${k.minCore.toFixed(2)} mm, ${k.nCore} pieces inside`; }
 $("stlA").onclick=()=>{ if(!pending) exportPieces(false); };
 $("stl0").onclick=()=>{ if(!pending) exportPieces(true); };
 
@@ -542,7 +555,7 @@ function schedule(){ if(pending) return; pending=true; $("busy").textContent="co
 function rebuild(){
   readP(); SM=program(); markErased(); computePieces(); theme(); buildThree(); computeSupport();
   si=Math.min(SM.length-1,Math.round(+$("s").value/1000*(SM.length-1)));
-  showStats(); showDep(); pose(); drawPlane(); drawRipple(); render();
+  showStats(); showChecks(); pose(); drawPlane(); drawRipple(); render();
 }
 function scrub(){ si=Math.min(SM.length-1,Math.round(+$("s").value/1000*(SM.length-1))); pose(); drawPlane(); drawRipple(); render(); }
 $("s").addEventListener("input",scrub);
